@@ -119,20 +119,30 @@ function ArrowButton({ href, onClick }: { href?: string; onClick?: () => void })
   const cls =
     "flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full text-white transition-opacity hover:opacity-80";
   const style = { background: "#f68d1f", border: "1px solid #c86a00" };
-  if (href)
+  const icon = (
+    <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
+  );
+
+  if (href) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" className={cls} style={style}>
-        <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-        </svg>
+        {icon}
       </a>
     );
+  }
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={cls} style={style}>
+        {icon}
+      </button>
+    );
+  }
   return (
-    <button type="button" onClick={onClick} className={cls} style={style}>
-      <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-      </svg>
-    </button>
+    <span className={cls} style={style}>
+      {icon}
+    </span>
   );
 }
 
@@ -191,7 +201,7 @@ function NewsRow({ icon, label, sub, href, badge }: {
         >
           {badge}
         </span>
-        <ArrowButton href={href} />
+        <ArrowButton />
       </div>
     </a>
   );
@@ -273,7 +283,7 @@ function RailButton({
       </span>
     </>
   );
-  if (href)
+  if (href) {
     return (
       <a
         href={href}
@@ -285,6 +295,7 @@ function RailButton({
         {inner}
       </a>
     );
+  }
   return (
     <button
       type="button"
@@ -320,7 +331,7 @@ export default function Home() {
 
   const handleShare = async () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
-    if (navigator.share) {
+    if (typeof navigator !== "undefined" && navigator.share) {
       try { await navigator.share({ title: "HOHYUN JANG", url }); return; } catch { /* fallback */ }
     }
     try {
@@ -391,7 +402,7 @@ export default function Home() {
               }}
             >
               <span style={{ fontWeight: 700 }}>Welcome to HOHYUN.DEV!</span>
-              {" "}個人プロフィール & リンク集
+              {" "}프로필 &amp; 링크 허브
               {/* Bubble tail */}
               <span
                 style={{
@@ -909,7 +920,7 @@ export default function Home() {
                 className="p-2"
                 style={{ background: "#ffffff", fontSize: 11, color: "#21242e", fontFamily: "Arial, Helvetica, sans-serif", lineHeight: 1.5 }}
               >
-                mylink는 Next.js 16 + Tailwind v4로 제작된 개인 프로필 & 링크 허브입니다.
+                mylink는 Next.js 16 + Tailwind v4로 제작된 개인 프로필 &amp; 링크 허브입니다.
                 <div
                   className="mt-2"
                   style={{ borderTop: "1px dotted #60619c", paddingTop: 6, fontSize: 10, color: "#60619c" }}
@@ -1001,7 +1012,7 @@ export default function Home() {
               fontFamily: "Arial, Helvetica, sans-serif",
             }}
           >
-            ©{new Date().getFullYear()} 장호현 (HOHYUN JANG) · All Rights Reserved
+            ©2026 장호현 (HOHYUN JANG) · All Rights Reserved
           </span>
 
           <div className="flex items-center gap-3">
