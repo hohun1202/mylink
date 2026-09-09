@@ -1,53 +1,129 @@
 @import "tailwindcss";
 
+/* ─── Nintendo.com circa 2001 — Design System ─────────────────────────────── */
+
 :root {
-  --background: #080711;
-  --foreground: #f4f4f5;
+  /* Surface */
+  --color-canvas: #7a8aba;
+  --color-periwinkle: #8ba1d4;
+  --color-sky: #9fbee7;
+  --color-lavender: #acace7;
+  --color-ice: #c0d5e6;
+  --color-chrome-indigo: #3d4f97;
+  --color-muted-indigo: #60619c;
+  --color-platinum: #dedede;
+  --color-surface: #ffffff;
+  /* Command */
+  --color-carbon: #21242e;
+  /* Accent / Signal */
+  --color-primary: #e60012;
+  --color-signal: #f68d1f;
+  --color-amber: #ecab37;
+  --color-nav-gold: #e48600;
+  /* Text */
+  --color-ink: #21242e;
+  --color-ink-soft: #3d4f97;
+  --color-on-primary: #ffffff;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-mono: "Courier New", Courier, monospace;
+}
+
+/* ─── Base ─────────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
   overflow-x: hidden;
+  margin: 0;
 }
 
-/* Subtle dot grid pattern */
-.bg-dot-grid {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-  background-size: 24px 24px;
+/* ─── Bevel Plate System ────────────────────────────────────────────────────
+   Every plate is edge-lit: bright top + chrome-indigo shadow line beneath.
+   No blur. Physical stamped-metal illusion.
+────────────────────────────────────────────────────────────────────────────── */
+
+/* Level 1 — Plate (content panels) */
+.plate {
+  background: var(--color-canvas);
+  border-top: 1px solid #a8b8d8;
+  border-left: 1px solid #a8b8d8;
+  border-right: 1px solid var(--color-chrome-indigo);
+  border-bottom: 2px solid var(--color-chrome-indigo);
 }
 
-/* Ambient glow animations */
-@keyframes float-slow {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(-10px, -15px) scale(1.05);
-  }
+/* Level 2 — Raised chip (buttons, tabs) */
+.chip {
+  border-top: 1px solid #c8d4ee;
+  border-left: 1px solid #c8d4ee;
+  border-right: 1px solid var(--color-chrome-indigo);
+  border-bottom: 2px solid var(--color-chrome-indigo);
 }
 
-.animate-float-slow {
-  animation: float-slow 10s ease-in-out infinite;
+/* Level 3 — Command slab (nav bar, footer) */
+.command-slab {
+  background: var(--color-carbon);
+  background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 4px 4px;
 }
 
-@keyframes float-reverse {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(15px, 12px) scale(0.95);
-  }
+/* ─── Halftone texture (standalone utility) ─────────────────────────────── */
+.halftone {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 4px 4px;
 }
 
-.animate-float-reverse {
-  animation: float-reverse 12s ease-in-out infinite;
+/* ─── Hero Display Wordmark ─────────────────────────────────────────────── */
+.hero-wordmark {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 44px;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffffff;
+  -webkit-text-stroke: 2px #3d4f97;
+  text-shadow: 4px 4px 0 #3d4f97;
+  letter-spacing: -0.5px;
+  text-transform: uppercase;
+}
+
+/* ─── Nav Label (uppercase chrome voice) ───────────────────────────────── */
+.nav-label {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ─── Chamfered corner (45° cut, not rounded) ───────────────────────────── */
+.chamfered {
+  clip-path: polygon(
+    8px 0%, calc(100% - 8px) 0%,
+    100% 8px, 100% calc(100% - 8px),
+    calc(100% - 8px) 100%, 8px 100%,
+    0% calc(100% - 8px), 0% 8px
+  );
+}
+
+/* ─── Bevel inset (recessed panel) ─────────────────────────────────────── */
+.bevel-inset {
+  border-top: 2px solid #3d4f97;
+  border-left: 2px solid #3d4f97;
+  border-right: 1px solid #a8b8d8;
+  border-bottom: 1px solid #a8b8d8;
+}
+
+/* ─── Section seam line ─────────────────────────────────────────────────── */
+.seam {
+  border-bottom: 1px solid #3d4f97;
 }
