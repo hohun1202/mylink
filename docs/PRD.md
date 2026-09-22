@@ -78,13 +78,29 @@
 
 | 기능 | shadcn/ui 컴포넌트 |
 |---|---|
-| 링크 버튼 (F8) | `Button` 의 `buttonVariants` — `variant: "outline"`, `size: "block"`(가로 꽉 채움·긴 제목 줄바꿈, 2026-09-22 추가)을 `<a>` 에 적용 (+ lucide 아이콘) |
+| 링크 버튼 (F8) | `Button` — `variant="outline"`, `size="block"`(가로 꽉 채움·긴 제목 줄바꿈, 2026-09-22 추가). `render={<a …/>}` + `nativeButton={false}` 로 `<a>` 태그로 그린다 (+ lucide 아이콘) |
 | 아바타 (F4·F8) | `Avatar` — 공개 페이지는 `size="xl"`(96px, 2026-09-22 추가) |
 | 프로필·링크 편집 입력 (F4·F5) | `Input`, `Label`, `Textarea`, `Field` |
 | 링크 삭제 확인 (F5) | `AlertDialog` — 브라우저 기본 `confirm()` 대신 |
 | 대시보드 영역 구분 | `Card`, `Separator` |
 | 테마 선택 (F6) | `RadioGroup` 또는 `ToggleGroup` |
 | 저장 완료 알림 | `Sonner` (토스트) |
+| 빈 목록·없는 핸들 안내 (F8) | `Empty` |
+| 데이터 복원 중 로딩 (5.1) | `Skeleton` |
+
+**재사용 컴포넌트 구조 (2026-09-22)**
+
+화면 코드는 shadcn/ui(`ui/`)를 조립한 작은 컴포넌트로 나눠 두고, 다른 화면에서 그대로 가져다 쓴다. 스토어를 읽는 것은 화면 본체(`ProfileView`)뿐이고, 나머지는 **props 로만 값을 받는다** — 그래야 대시보드(F4·F5)의 미리보기·목록에서도 같은 컴포넌트를 쓸 수 있다.
+
+| 컴포넌트 | 쓰는 shadcn/ui | 역할 | 재사용처 |
+|---|---|---|---|
+| `link/LinkIcon` | — (lucide) | URL → 아이콘 (F8 링크 아이콘 규칙) | 공개 페이지, 대시보드 링크 목록 |
+| `link/LinkButton` | `Button` | 아이콘 + 제목 + `>`, 새 탭 열기 | 공개 페이지, 대시보드 미리보기 |
+| `link/LinkList` | `Empty` | 링크 버튼 세로 목록, 0개면 안내 (`emptyMessage` 로 문구 변경 가능) | 공개 페이지, 대시보드 미리보기 |
+| `profile/ProfileHeader` | `Avatar` | 아바타·이름·한 줄 소개 | 공개 페이지, 프로필 편집 미리보기 (F4) |
+| `profile/ProfileSkeleton` | `Skeleton` | 복원 중 자리표시 | 공개 페이지 |
+| `profile/ProfileNotFound` | `Empty` | "페이지를 찾을 수 없어요" | 공개 페이지 |
+| `profile/ProfileView` | — | 스토어를 읽어 위 컴포넌트를 상태별로 조립 | `/[handle]` 전용 |
 
 **테마 프리셋 (F6) 구현 방향**
 - 테마마다 shadcn CSS 변수(`--background`, `--primary` 등)의 값 묶음을 하나씩 정의하고, 공개 페이지에 적용한다. 컴포넌트 코드는 테마별로 바꾸지 않는다.
@@ -447,8 +463,7 @@ type Link = {
 | 파일 | 역할 |
 |---|---|
 | `src/app/[handle]/page.tsx` | 주소에서 핸들을 꺼내 `ProfileView` 에 넘김 |
-| `src/components/ProfileView.tsx` | 화면 본체. 복원 전 "불러오는 중…", 없는 핸들 안내, 아바타·이름·소개·링크 목록. 링크가 0개면 "아직 등록된 링크가 없어요" |
-| `src/components/LinkButton.tsx` | 링크 버튼 1개 (아이콘 + 제목 + `>`), 새 탭 열기 |
+| `src/components/profile/*`, `src/components/link/*` | 화면 컴포넌트 — 구성은 1.4절 "재사용 컴포넌트 구조" |
 | `src/lib/linkIcon.ts` | URL → 아이콘 종류 (F8 링크 아이콘 규칙) |
 | `src/lib/mockData.ts` | `db.json` → 화면용 프로필 변환 |
 
@@ -473,5 +488,5 @@ type Link = {
 | 4 | 테마 프리셋 개수와 구체 목록 | 3~5개, 디자인 단계에서 확정 |
 | 5 | 기본 아바타 개수·스타일 | 디자인 단계에서 확정 |
 | 6 | URL에 `https://` 자동 보정 여부 | 구현 시 결정 |
-| 7 | 기준이 되는 `design.md` 파일의 위치, 그리고 기존 Nintendo 2001 스타일(`globals.css` 변수·Arial 글꼴)과 같은 디자인인지 여부 | 파일 확보 후 `docs/design.md` 에 두고, 그 값을 shadcn 토큰에 매핑. 기존 스타일 변수는 매핑이 끝나면 정리 |
-| 8 | 링크 아이콘 중 브랜드 아이콘(GitHub·YouTube·Instagram·X) 출처 | `lucide-react` 에는 브랜드 아이콘이 없음(2026-09-22 확인). 별도 아이콘 라이브러리 또는 SVG 직접 추가 중 선택. 메일·기본 링크는 lucide(`Mail`, `Link`) 사용. **확정 전까지 임시로** lucide 대체 아이콘 사용: GitHub `FolderGit2`, YouTube `SquarePlay`, Instagram `Camera`, X `AtSign`, 블로그 `NotebookPen` (`src/components/LinkButton.tsx` 의 `ICONS` 한 곳에서 교체) |
+| 7 | 기준이 되는 `design.md` 파일의 위치, 그리고 기존 Nintendo 2001 스타일(`globals.css` 변수·Arial 글꼴)과 같은 디자인인지 여부 — **2026-09-22 확인: 저장소·컴퓨터 어디에도 `design.md` 파일 없음. 공개 프로필 페이지는 현재 shadcn 기본(`neutral`) 테마** | 파일 확보 후 `docs/design.md` 에 두고, 그 값을 shadcn 토큰에 매핑. 기존 스타일 변수는 매핑이 끝나면 정리 |
+| 8 | 링크 아이콘 중 브랜드 아이콘(GitHub·YouTube·Instagram·X) 출처 | `lucide-react` 에는 브랜드 아이콘이 없음(2026-09-22 확인). 별도 아이콘 라이브러리 또는 SVG 직접 추가 중 선택. 메일·기본 링크는 lucide(`Mail`, `Link`) 사용. **확정 전까지 임시로** lucide 대체 아이콘 사용: GitHub `FolderGit2`, YouTube `SquarePlay`, Instagram `Camera`, X `AtSign`, 블로그 `NotebookPen` (`src/components/link/LinkIcon.tsx` 의 `ICONS` 한 곳에서 교체) |

@@ -2,7 +2,7 @@
 // 폴더 이름 [handle] 의 대괄호는 "주소의 이 자리에 아무 값이나 올 수 있다"는 뜻입니다.
 // 예: /hohun1202 로 접속하면 handle = "hohun1202"
 
-import ProfileView from "@/components/ProfileView"; // 실제 화면을 그리는 컴포넌트
+import ProfileView from "@/components/profile/ProfileView"; // 실제 화면을 그리는 컴포넌트
 
 export default async function ProfilePage({ params }: PageProps<"/[handle]">) {
   const { handle } = await params; // Next.js 16에서는 params가 Promise라서 await로 꺼냄
