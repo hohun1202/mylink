@@ -18,6 +18,7 @@ type ProfileState = {
   profiles: Profile[]; // 저장된 모든 프로필
   hasHydrated: boolean; // LocalStorage에서 불러오기를 끝냈는지 (저장하지 않음)
   addLink: (handle: string, link: LinkInput) => void; // 링크를 목록 맨 끝에 추가 (F5)
+  removeLink: (handle: string, linkId: string) => void; // 링크 하나 삭제 (F5 · 시나리오 B-4)
 };
 
 export const useProfileStore = create<ProfileState>()(
@@ -33,6 +34,13 @@ export const useProfileStore = create<ProfileState>()(
               ? // 새 링크는 맨 끝에 붙인다 (배열 순서 = 화면 순서). id는 브라우저가 만들어 주는 고유 문자열
                 { ...p, links: [...p.links, { id: crypto.randomUUID(), ...link }] }
               : p,
+          ),
+        })),
+      removeLink: (handle, linkId) =>
+        set((state) => ({
+          profiles: state.profiles.map((p) =>
+            // 해당 프로필에서 id가 같은 링크만 빼고 나머지는 순서 그대로 남긴다
+            p.handle === handle ? { ...p, links: p.links.filter((l) => l.id !== linkId) } : p,
           ),
         })),
     }),

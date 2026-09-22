@@ -16,31 +16,39 @@ export function normalizeUrl(raw: string): string {
   return hasScheme ? url : `https://${url}`;
 }
 
+// 형식이 틀렸을 때 보여줄 문구 (예시 주소를 함께 보여줌)
+export const URL_FORMAT_ERROR = "올바른 URL 형식이 아닙니다 (예: https://example.com).";
+
 function checkUrl(raw: string): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return "URL을 입력해 주세요";
-  if (/\s/.test(trimmed)) return "주소에 공백이 들어갈 수 없어요";
+  if (/\s/.test(trimmed)) return URL_FORMAT_ERROR; // 주소 중간에 공백
 
   const url = normalizeUrl(trimmed);
 
   // 메일 링크: mailto:이름@도메인.xx 형식만 허용 (F8 아이콘 규칙의 "메일"용)
   if (url.toLowerCase().startsWith("mailto:")) {
-    return /^mailto:[^@\s]+@[^@\s]+\.[^@\s]+$/i.test(url) ? null : "메일 주소 형식이 올바르지 않아요";
+    return /^mailto:[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(url) ? null : "메일 주소 형식이 올바르지 않아요 (예: mailto:me@example.com)";
   }
 
-  let parsed: URL;
+  // http(s):// 로 시작해야 한다 (ftp:// 등 거절)
+  if (!/^https?:\/\//i.test(url)) return URL_FORMAT_ERROR;
+
   try {
-    parsed = new URL(url); // 주소 형식이 아니면 여기서 오류가 난다 (예: "https://")
+    new URL(url); // 주소 형식이 아니면 여기서 오류가 난다 (예: "https://")
   } catch {
-    return "올바른 주소 형식이 아니에요";
+    return URL_FORMAT_ERROR;
   }
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    return "http:// 또는 https:// 로 시작하는 주소를 입력해 주세요";
-  }
-  // 도메인에 점(.)이 있고, 점으로 나뉜 조각이 비어 있지 않아야 한다 (예: "abc", "abc." 거절)
-  const labels = parsed.hostname.split(".");
-  if (labels.length < 2 || labels.some((l) => l === "")) {
-    return "도메인이 올바르지 않아요 (예: example.com)";
+
+  // 도메인은 브라우저가 해석한 값이 아니라 "입력한 글자 그대로"로 검사한다.
+  // (브라우저는 "1234444" 같은 숫자를 IP 주소 0.18.214.12 로 바꿔 버려 점이 있는 것처럼 보이게 만듦)
+  const host = url.replace(/^https?:\/\//i, "").split(/[/?#:]/)[0]; // 예: "github.com/abc" → "github.com"
+  const labels = host.split(".");
+  const tld = labels[labels.length - 1]; // 맨 끝 조각 (com, io, kr …)
+  // 점으로 나뉜 조각이 2개 이상이고, 빈 조각이 없고, 맨 끝이 영문 2글자 이상이어야 한다
+  // → "abc", "abc.", "1234444", "1.2.3.4", "example.c" 거절
+  if (labels.length < 2 || labels.some((l) => l === "") || !/^[a-z]{2,}$/i.test(tld)) {
+    return URL_FORMAT_ERROR;
   }
   return null; // 통과
 }

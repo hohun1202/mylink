@@ -41,7 +41,11 @@ export default function MyPageView() {
               <h2 id="my-links-title" className="font-bold">
                 내 링크 {profile.links.length}개
               </h2>
-              <LinkList links={profile.links} emptyMessage="아직 링크가 없어요. 위에서 추가해 보세요" />
+              <LinkList
+                links={profile.links}
+                emptyMessage="아직 링크가 없어요. 위에서 추가해 보세요"
+                deletableHandle={MY_HANDLE} // 우클릭 삭제
+              />
             </section>
           </>
         )}
