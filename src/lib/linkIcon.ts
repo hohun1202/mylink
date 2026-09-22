@@ -7,6 +7,7 @@ export type LinkIconKind =
   | "youtube"
   | "instagram"
   | "x"
+  | "velog" // velog 블로그 (브랜드 로고가 있어 일반 블로그와 나눔)
   | "blog"
   | "mail"
   | "default";
@@ -20,7 +21,8 @@ export function getLinkIconKind(url: string): LinkIconKind {
   if (u.includes("youtube.com") || u.includes("youtu.be")) return "youtube";
   if (u.includes("instagram.com")) return "instagram";
   if (hostIs(u, "x.com") || u.includes("twitter.com")) return "x";
-  if (u.includes("velog.io") || u.includes("blog")) return "blog";
+  if (u.includes("velog.io")) return "velog";
+  if (u.includes("blog")) return "blog";
   return "default"; // 어느 규칙에도 안 걸리면 기본 링크 아이콘
 }
 

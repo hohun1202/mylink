@@ -21,7 +21,13 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/c
 import { Input } from "@/components/ui/input";
 import { useLinkForm } from "@/components/link/useLinkForm"; // 입력값·검사·추가 공통 로직
 
-export default function AddLinkDialog({ handle }: { handle: string }) {
+type AddLinkDialogProps = {
+  handle: string; // 링크를 추가할 프로필
+  label?: string; // 여는 버튼의 글자
+  fullWidth?: boolean; // true면 여는 버튼을 가로로 꽉 채운 큰 버튼으로 (공개 페이지용)
+};
+
+export default function AddLinkDialog({ handle, label = "링크 추가", fullWidth = false }: AddLinkDialogProps) {
   const [open, setOpen] = useState(false); // 다이얼로그가 열려 있는지
   // 추가에 성공하면 창을 닫는다 (입력 칸 비우기는 훅이 해 줌)
   const { form, errors, update, reset, submit } = useLinkForm(handle, () => setOpen(false));
@@ -35,9 +41,9 @@ export default function AddLinkDialog({ handle }: { handle: string }) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {/* 다이얼로그를 여는 버튼 */}
-      <DialogTrigger render={<Button />}>
+      <DialogTrigger render={<Button size={fullWidth ? "lg" : "default"} className={fullWidth ? "h-12 w-full text-base font-bold" : undefined} />}>
         <Plus aria-hidden />
-        링크 추가
+        {label}
       </DialogTrigger>
 
       <DialogContent>

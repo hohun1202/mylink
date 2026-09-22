@@ -10,9 +10,8 @@ import type { LinkInput } from "@/lib/validateLink"; // 검사를 통과한 링�
 import type { Profile } from "@/lib/types"; // 프로필 데이터 모양
 import { MOCK_PROFILES } from "@/lib/mockData"; // 처음 넣어 줄 샘플 데이터
 
-// "내 페이지"의 핸들. 로그인·핸들 설정(F3)이 아직 없어서 Mock 사용자 한 명을 페이지 주인으로 정해 둔다.
-// 3단계에서 핸들 설정이 생기면 이 값 대신 로컬 사용자의 핸들을 쓴다.
-export const MY_HANDLE = "hohun1202";
+// "내 페이지" 핸들은 src/lib/me.ts 에 있다. 기존 화면들이 여기서 가져다 쓰므로 그대로 다시 내보낸다
+export { MY_HANDLE } from "@/lib/me";
 
 // 스토어에 들어 있는 값과 동작의 모양
 type ProfileState = {

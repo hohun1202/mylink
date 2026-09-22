@@ -18,10 +18,8 @@ export default function LinkButton({ link }: { link: Link }) {
       // bevel: design.md(Nintendo 2001)의 입체 금속판 모양 / block: 가로를 꽉 채우고 긴 제목은 줄바꿈
       className={cn(buttonVariants({ variant: "bevel", size: "block" }))}
     >
-      {/* 검정 네모 칸 안의 흰 아이콘 (랜딩 페이지 링크 줄의 아이콘 칸과 같은 모양) */}
-      <span className="flex size-8 shrink-0 items-center justify-center border border-border bg-carbon text-carbon-foreground">
-        <LinkIcon url={link.url} className="size-4" />
-      </span>
+      {/* 아이콘 칸: 브랜드면 브랜드 색 + 로고, 아니면 검정 칸 + 아이콘 */}
+      <LinkIcon url={link.url} />
       {/* min-w-0 + break-words: 아주 긴 제목도 버튼 밖으로 넘치지 않고 줄바꿈 */}
       <span className="min-w-0 flex-1 font-bold break-words text-muted-foreground group-hover/button:underline">
         {link.title}

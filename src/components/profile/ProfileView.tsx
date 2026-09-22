@@ -4,11 +4,12 @@
 // 스토어에서 데이터를 꺼내 상태에 맞는 컴포넌트를 골라 조립하는 역할만 합니다.
 // 스타일은 모두 Tailwind 클래스로만 씁니다 (CSS Module 사용 안 함 · PRD 1.4).
 
+import AddLinkDialog from "@/components/link/AddLinkDialog"; // 링크 추가 버튼 + 다이얼로그
 import LinkList from "@/components/link/LinkList"; // 링크 버튼 목록
 import ProfileHeader from "@/components/profile/ProfileHeader"; // 아바타·이름·소개
 import ProfileNotFound from "@/components/profile/ProfileNotFound"; // 없는 핸들 안내
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton"; // 로딩 자리표시
-import { useProfileStore, useStoreHydration } from "@/store/useProfileStore";
+import { MY_HANDLE, useProfileStore, useStoreHydration } from "@/store/useProfileStore";
 
 export default function ProfileView({ handle }: { handle: string }) {
   // LocalStorage 복원을 시작하고 끝났는지 받기 (하이드레이션 오류 방지 · PRD 5.1)
@@ -29,6 +30,8 @@ export default function ProfileView({ handle }: { handle: string }) {
         ) : (
           <>
             <ProfileHeader name={profile.name} bio={profile.bio} avatarId={profile.avatarId} />
+            {/* 내 페이지일 때만 링크 추가 버튼을 보여준다 (로그인이 없어 MY_HANDLE 로 판단) */}
+            {handle === MY_HANDLE && <AddLinkDialog handle={handle} label="새로운 링크 추가하기" fullWidth />}
             <LinkList links={profile.links} />
           </>
         )}

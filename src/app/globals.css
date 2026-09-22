@@ -54,6 +54,12 @@
   --accent-edge: #c86a00; /* 주황 버튼 테두리 */
   --brand: #5b5fc7; /* /mypage 추가 버튼 색 (사용자 지정 · design.md 팔레트 밖) */
   --brand-foreground: #ffffff;
+  /* 링크 아이콘 칸의 브랜드 색 — simple-icons 16.32.0 의 공식 색 값 */
+  --logo-github: #181717;
+  --logo-youtube: #ff0000;
+  --logo-instagram: #ff0069;
+  --logo-x: #000000;
+  --logo-velog: #20c997;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -80,6 +86,11 @@
   --color-accent-edge: var(--accent-edge);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-logo-github: var(--logo-github);
+  --color-logo-youtube: var(--logo-youtube);
+  --color-logo-instagram: var(--logo-instagram);
+  --color-logo-x: var(--logo-x);
+  --color-logo-velog: var(--logo-velog);
   --shadow-hard: 3px 3px 0 var(--carbon); /* 번지지 않는 각진 그림자 */
   --text-shadow-hard: 3px 3px 0 var(--border); /* 제목 글자의 인디고 그림자 */
   --color-sidebar-ring: var(--sidebar-ring);
