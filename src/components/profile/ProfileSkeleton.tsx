@@ -12,7 +12,7 @@ export default function ProfileSkeleton() {
       <div className="mt-8 flex w-full flex-col gap-3">
         {/* 링크 버튼 자리 3개 (key는 목록 구분용 번호) */}
         {[0, 1, 2].map((i) => (
-          <Skeleton key={i} className="h-14 w-full rounded-xl" />
+          <Skeleton key={i} className="h-14 w-full rounded-sm" />
         ))}
       </div>
     </div>

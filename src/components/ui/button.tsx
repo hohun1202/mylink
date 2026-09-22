@@ -17,6 +17,9 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        // design.md(Nintendo 2001) 입체 판: 위·왼쪽은 밝게, 오른쪽·아래는 인디고로 눌린 금속판처럼
+        bevel:
+          "border-t-bevel border-l-bevel border-r-border border-b-2 border-b-border bg-card text-card-foreground hover:bg-muted",
       },
       size: {
         default:
@@ -32,7 +35,7 @@ const buttonVariants = cva(
         "icon-lg": "size-9",
         // 화면 가로를 채우는 큰 버튼 (공개 페이지의 링크 버튼 · PRD F8). 긴 글자는 줄바꿈
         block:
-          "h-auto min-h-14 w-full justify-start gap-3 rounded-xl px-4 py-3 text-left text-base whitespace-normal [&_svg:not([class*='size-'])]:size-5",
+          "h-auto min-h-14 w-full justify-start gap-3 rounded-sm px-3 py-3 text-left text-base whitespace-normal [&_svg:not([class*='size-'])]:size-5",
       },
     },
     defaultVariants: {

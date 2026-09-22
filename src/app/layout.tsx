@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
-
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
 
 // 이 사이트는 2001년 웹 느낌을 위해 Arial/Courier만 씁니다(globals.css).
 // 따라서 웹폰트를 따로 내려받지 않습니다 — 방문자 로딩 속도를 위해서입니다.
@@ -26,7 +22,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="ko"
-      className={cn("h-full antialiased", "font-sans", geist.variable)}
+      className={cn("h-full antialiased", "font-sans")}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

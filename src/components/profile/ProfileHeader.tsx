@@ -15,16 +15,21 @@ export default function ProfileHeader({ name, bio, avatarId }: ProfileHeaderProp
   return (
     <header className="flex w-full flex-col items-center text-center">
       {/* (1) 아바타 — 이미지를 못 불러오면 이름 첫 글자를 보여줌 */}
-      <Avatar size="xl">
+      {/* framed: 검정 굵은 테두리 + 각진 그림자 (design.md) */}
+      <Avatar size="xl" variant="framed">
         <AvatarImage src={AVATARS[avatarId] ?? AVATARS.default} alt="" />
         <AvatarFallback className="text-2xl">{name.slice(0, 1)}</AvatarFallback>
       </Avatar>
 
       {/* (2) 이름 */}
-      <h1 className="mt-4 text-2xl font-bold break-words">{name}</h1>
+      {/* 흰 글자 + 인디고 그림자: 랜딩 페이지 큰 제목(hero wordmark)과 같은 느낌 */}
+      <h1 className="mt-5 text-3xl font-black break-words text-primary-foreground text-shadow-hard">
+        {name}
+      </h1>
 
       {/* (3) 한 줄 소개 */}
-      {bio && <p className="mt-2 text-sm text-muted-foreground break-words">{bio}</p>}
+      {/* 캔버스 배경 위라 대비가 충분한 진한 글자(foreground)를 씀 */}
+      {bio && <p className="mt-2 text-sm font-bold break-words text-foreground">{bio}</p>}
     </header>
   );
 }

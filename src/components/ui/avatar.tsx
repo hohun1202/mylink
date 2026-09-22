@@ -7,16 +7,20 @@ import { cn } from "cn"
 function Avatar({
   className,
   size = "default",
+  variant = "default",
   ...props
 }: AvatarPrimitive.Root.Props & {
   size?: "default" | "sm" | "lg" | "xl"
+  // framed: design.md(Nintendo 2001)의 검정 굵은 테두리 + 각진 그림자
+  variant?: "default" | "framed"
 }) {
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"
       data-size={size}
+      data-variant={variant}
       className={cn(
-        "group/avatar relative flex size-8 shrink-0 rounded-full select-none after:absolute after:inset-0 after:rounded-full after:border after:border-border after:mix-blend-darken data-[size=lg]:size-10 data-[size=sm]:size-6 data-[size=xl]:size-24 dark:after:mix-blend-lighten",
+        "group/avatar relative flex size-8 shrink-0 rounded-full select-none after:absolute after:inset-0 after:rounded-full after:border after:border-border after:mix-blend-darken data-[size=lg]:size-10 data-[size=sm]:size-6 data-[size=xl]:size-24 data-[variant=framed]:border-3 data-[variant=framed]:border-carbon data-[variant=framed]:bg-popover data-[variant=framed]:shadow-hard data-[variant=framed]:after:hidden dark:after:mix-blend-lighten",
         className
       )}
       {...props}

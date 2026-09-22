@@ -19,7 +19,7 @@ export default function ProfileNotFound({ handle }: { handle: string }) {
         </EmptyMedia>
         <EmptyTitle className="text-lg">페이지를 찾을 수 없어요</EmptyTitle>
         {/* 방문자가 주소를 잘못 쳤는지 확인할 수 있게 입력한 핸들을 보여줌 */}
-        <EmptyDescription className="break-all">mylink/{handle}</EmptyDescription>
+        <EmptyDescription className="break-all text-foreground">mylink/{handle}</EmptyDescription>
       </EmptyHeader>
     </Empty>
   );

@@ -2,6 +2,7 @@
 
 - 작성일: 2026-09-15
 - 최종 수정: 2026-09-22 — 디자인 시스템을 shadcn/ui + `design.md` 로 확정 (1.4절 추가), 더미 데이터 `src/mocks/` 지정 (5.2절 추가)
+- 최종 수정: 2026-09-22 — **`design.md` = Nintendo 2001 스타일로 확정**, `docs/design.md` 작성 및 shadcn 토큰 매핑 (1.4절, 10장 7번)
 - 최종 수정: 2026-09-22 — **스타일은 Tailwind CSS 유틸리티 클래스로 통일, CSS Module 사용 금지** (1.3·1.4절), 1단계 공개 프로필 페이지 구현 반영 (5.2·9.1·10장)
 - 버전: v0.2 (MVP)
 - 상태: 초안 — 사용자 인터뷰 결과 반영
@@ -41,7 +42,7 @@
 
 - 즉 shadcn/ui 컴포넌트를 그대로 쓰되, 그 **디자인 토큰(CSS 변수)과 variant 를 `design.md` 의 값으로 바꿔서** `design.md` 의 디자인처럼 보이게 만든다.
 - `design.md` 와 shadcn/ui 기본 스타일이 다르면 **`design.md` 가 우선**한다.
-- `design.md` 의 위치: **미정 — 10장 미결정 사항 7번.** 확정되면 `docs/design.md` 에 두는 것을 기본안으로 한다.
+- `design.md` 의 위치: **`docs/design.md`** (2026-09-22). 기준 디자인은 랜딩 페이지에 쓴 **Nintendo.com 2001 메탈릭 크롬** 스타일이다. 원본 파일은 남아 있지 않아, 랜딩 페이지와 `globals.css` 에 쓰인 값에서 되살려 작성했다.
 
 **설정 (2026-09-22 초기화 완료, `components.json`)**
 
@@ -107,8 +108,9 @@
 - 기본 테마는 `design.md` 의 디자인이다. 나머지 프리셋도 `design.md` 의 규칙(글꼴·반경·간격 등)은 유지하고 색 묶음만 바꾸는 것을 기본안으로 한다.
 
 **기존 디자인과의 관계**
-- 기존 `globals.css` 에는 "Nintendo.com 2001 메탈릭 크롬" 스타일 변수(`--color-canvas`, `--color-primary: #e60012` 등)가 shadcn 변수와 따로 남아 있다. 새로 만드는 화면에서는 이 변수를 직접 쓰지 않는다.
-- 이 스타일이 `design.md` 의 디자인과 같은 것인지는 미정이다 (10장 미결정 사항 7번). 같다면 이 값들을 shadcn 토큰으로 옮기고, 다르면 `design.md` 로 대체한다.
+- Nintendo 2001 값은 **shadcn 토큰으로 옮겼다** (2026-09-22, 매핑표는 `docs/design.md` 2장). 추가 토큰: `--bevel`, `--carbon`, `--carbon-foreground`, `--accent-edge`, 그림자 `shadow-hard`, 글자 그림자 `text-shadow-hard`. 글꼴은 Arial 로 바꾸고 웹폰트(Geist)는 뺐다.
+- 추가한 variant: `Button variant="bevel"`, `Avatar variant="framed"`.
+- `globals.css` 의 옛 변수(`--color-canvas` 등)와 전역 클래스(`.plate`, `.chip` 등)는 **랜딩 페이지가 아직 쓰고 있어서 남겨 둔다.** 새 화면에서는 쓰지 않고, 랜딩(F1)을 다시 만들 때 정리한다.
 
 ---
 
@@ -488,5 +490,5 @@ type Link = {
 | 4 | 테마 프리셋 개수와 구체 목록 | 3~5개, 디자인 단계에서 확정 |
 | 5 | 기본 아바타 개수·스타일 | 디자인 단계에서 확정 |
 | 6 | URL에 `https://` 자동 보정 여부 | 구현 시 결정 |
-| 7 | 기준이 되는 `design.md` 파일의 위치, 그리고 기존 Nintendo 2001 스타일(`globals.css` 변수·Arial 글꼴)과 같은 디자인인지 여부 — **2026-09-22 확인: 저장소·컴퓨터 어디에도 `design.md` 파일 없음. 공개 프로필 페이지는 현재 shadcn 기본(`neutral`) 테마** | 파일 확보 후 `docs/design.md` 에 두고, 그 값을 shadcn 토큰에 매핑. 기존 스타일 변수는 매핑이 끝나면 정리 |
+| 7 | ~~기준이 되는 `design.md` 파일의 위치, 그리고 기존 Nintendo 2001 스타일과 같은 디자인인지 여부~~ | **해결 (2026-09-22)**: Nintendo 2001 스타일로 확정. 원본 파일이 없어 랜딩·`globals.css` 값에서 되살려 `docs/design.md` 작성, shadcn 토큰에 매핑 완료. 옛 변수·전역 클래스 정리는 랜딩(F1) 재작성 때 |
 | 8 | 링크 아이콘 중 브랜드 아이콘(GitHub·YouTube·Instagram·X) 출처 | `lucide-react` 에는 브랜드 아이콘이 없음(2026-09-22 확인). 별도 아이콘 라이브러리 또는 SVG 직접 추가 중 선택. 메일·기본 링크는 lucide(`Mail`, `Link`) 사용. **확정 전까지 임시로** lucide 대체 아이콘 사용: GitHub `FolderGit2`, YouTube `SquarePlay`, Instagram `Camera`, X `AtSign`, 블로그 `NotebookPen` (`src/components/link/LinkIcon.tsx` 의 `ICONS` 한 곳에서 교체) |

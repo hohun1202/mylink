@@ -23,7 +23,7 @@ export default function LinkList({
           <EmptyMedia variant="icon">
             <LinkGlyph />
           </EmptyMedia>
-          <EmptyTitle className="text-muted-foreground">{emptyMessage}</EmptyTitle>
+          <EmptyTitle className="text-foreground">{emptyMessage}</EmptyTitle>
         </EmptyHeader>
       </Empty>
     );
