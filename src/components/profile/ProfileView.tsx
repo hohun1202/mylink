@@ -4,22 +4,17 @@
 // 스토어에서 데이터를 꺼내 상태에 맞는 컴포넌트를 골라 조립하는 역할만 합니다.
 // 스타일은 모두 Tailwind 클래스로만 씁니다 (CSS Module 사용 안 함 · PRD 1.4).
 
-import { useEffect } from "react";
 import LinkList from "@/components/link/LinkList"; // 링크 버튼 목록
 import ProfileHeader from "@/components/profile/ProfileHeader"; // 아바타·이름·소개
 import ProfileNotFound from "@/components/profile/ProfileNotFound"; // 없는 핸들 안내
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton"; // 로딩 자리표시
-import { useProfileStore } from "@/store/useProfileStore";
+import { useProfileStore, useStoreHydration } from "@/store/useProfileStore";
 
 export default function ProfileView({ handle }: { handle: string }) {
-  const hasHydrated = useProfileStore((s) => s.hasHydrated); // LocalStorage 복원이 끝났는지
+  // LocalStorage 복원을 시작하고 끝났는지 받기 (하이드레이션 오류 방지 · PRD 5.1)
+  const hasHydrated = useStoreHydration();
   // 주소의 핸들과 같은 프로필 찾기 (없으면 undefined)
   const profile = useProfileStore((s) => s.profiles.find((p) => p.handle === handle));
-
-  // 화면이 브라우저에 뜬 뒤에 LocalStorage에서 데이터를 불러온다 (하이드레이션 오류 방지 · PRD 5.1)
-  useEffect(() => {
-    useProfileStore.persist.rehydrate();
-  }, []);
 
   return (
     // 전체 배경. body에 남아 있는 옛 스타일 대신 shadcn 토큰 색을 쓴다
