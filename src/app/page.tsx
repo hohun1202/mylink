@@ -375,7 +375,7 @@ export default function Home() {
             MASTHEAD ROW — mascot speech bubble + search
         ════════════════════════════════════════════════════════════════ */}
         <div
-          className="flex items-end justify-between gap-4 px-3 py-2"
+          className="flex flex-wrap items-end justify-between gap-2 px-3 py-2"
           style={{ background: "#7a8aba", borderBottom: "1px solid #3d4f97" }}
         >
           {/* Speech bubble */}
@@ -495,7 +495,7 @@ export default function Home() {
           </a>
 
           {/* Nav words */}
-          <div className="flex flex-1 items-stretch overflow-x-auto">
+          <div className="flex min-w-0 flex-1 items-stretch overflow-x-auto">
             {NAV_PRIMARY.map((item) => (
               <a
                 key={item.label}
@@ -650,7 +650,7 @@ export default function Home() {
           </div>
 
           {/* Wordmark + tagline */}
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             {/* Hero wordmark */}
             <div className="hero-wordmark leading-none">HOHYUN</div>
             <div className="hero-wordmark leading-none">JANG</div>
@@ -682,7 +682,7 @@ export default function Home() {
                 href="https://github.com/hohun1202"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-3 py-1.5 font-bold transition-opacity hover:opacity-80"
+                className="flex items-center gap-2 whitespace-nowrap px-3 py-1.5 font-bold transition-opacity hover:opacity-80"
                 style={{
                   background: "#f68d1f",
                   border: "1px solid #c86a00",
@@ -704,7 +704,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={copyEmail}
-                className="px-3 py-1.5 font-bold transition-opacity hover:opacity-80"
+                className="whitespace-nowrap px-3 py-1.5 font-bold transition-opacity hover:opacity-80"
                 style={{
                   background: "#ecab37",
                   border: "1px solid #c88000",
@@ -743,7 +743,7 @@ export default function Home() {
         {/* ════════════════════════════════════════════════════════════════
             BODY — 2-column split (left 2/3, right 1/3) + left rail tabs
         ════════════════════════════════════════════════════════════════ */}
-        <div className="flex" style={{ background: "#7a8aba", borderBottom: "2px solid #3d4f97" }}>
+        <div className="flex flex-col sm:flex-row" style={{ background: "#7a8aba", borderBottom: "2px solid #3d4f97" }}>
 
           {/* Left rotated tab rail */}
           <div
@@ -774,7 +774,7 @@ export default function Home() {
           </div>
 
           {/* Content column (2/3) */}
-          <div className="flex-1 min-w-0" style={{ borderRight: "1px solid #3d4f97" }}>
+          <div className="min-w-0 flex-1 border-b sm:border-b-0 sm:border-r" style={{ borderColor: "#3d4f97" }}>
 
             {/* ── Official Links panel ── */}
             <div style={{ borderBottom: "1px solid #3d4f97" }}>
@@ -874,7 +874,7 @@ export default function Home() {
           </div>
 
           {/* Right Action Rail (1/3) */}
-          <div className="w-[200px] shrink-0 lg:w-[220px]" style={{ background: "#7a8aba" }}>
+          <div className="w-full shrink-0 sm:w-[200px] lg:w-[220px]" style={{ background: "#7a8aba" }}>
 
             {/* Action buttons */}
             <div style={{ borderBottom: "1px solid #3d4f97" }}>
@@ -948,7 +948,7 @@ export default function Home() {
                     textShadow: "2px 2px 0 #3d4f97",
                     textTransform: "uppercase",
                     fontFamily: "Arial, Helvetica, sans-serif",
-                    lineHeight: 1.1,
+                    lineHeight: 1.45,
                     marginBottom: 6,
                   }}
                 >
