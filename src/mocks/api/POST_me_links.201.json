@@ -1,0 +1,10 @@
+{
+  "data": {
+    "id": "l_111",
+    "title": "새 링크",
+    "url": "https://example.com/new",
+    "order": 11,
+    "createdAt": "2026-09-22T12:00:00.000Z",
+    "updatedAt": "2026-09-22T12:00:00.000Z"
+  }
+}

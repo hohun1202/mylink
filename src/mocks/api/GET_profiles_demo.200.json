@@ -1,0 +1,71 @@
+{
+  "data": {
+    "handle": "demo",
+    "name": "데모 크리에이터",
+    "bio": "링크 목록 화면을 확인하기 위한 샘플 프로필입니다",
+    "avatarId": "default",
+    "themeId": "default",
+    "links": [
+      {
+        "id": "l_101",
+        "title": "인스타그램",
+        "url": "https://www.instagram.com/mylink_demo",
+        "order": 1
+      },
+      {
+        "id": "l_102",
+        "title": "유튜브 채널",
+        "url": "https://www.youtube.com/@mylink_demo",
+        "order": 2
+      },
+      {
+        "id": "l_103",
+        "title": "유튜브 영상 (짧은 주소)",
+        "url": "https://youtu.be/dQw4w9WgXcQ",
+        "order": 3
+      },
+      {
+        "id": "l_104",
+        "title": "X (트위터)",
+        "url": "https://x.com/mylink_demo",
+        "order": 4
+      },
+      {
+        "id": "l_105",
+        "title": "개발 블로그",
+        "url": "https://velog.io/@mylink_demo",
+        "order": 5
+      },
+      {
+        "id": "l_106",
+        "title": "여행 블로그",
+        "url": "https://blog.naver.com/mylink_demo",
+        "order": 6
+      },
+      {
+        "id": "l_107",
+        "title": "GitHub",
+        "url": "https://github.com/mylink-demo",
+        "order": 7
+      },
+      {
+        "id": "l_108",
+        "title": "문의 메일",
+        "url": "mailto:demo@example.com",
+        "order": 8
+      },
+      {
+        "id": "l_109",
+        "title": "포트폴리오 사이트",
+        "url": "https://example.com",
+        "order": 9
+      },
+      {
+        "id": "l_110",
+        "title": "제목이 아주 긴 링크 — 버튼 안에서 글자가 넘치거나 줄바꿈될 때 모양이 깨지지 않는지 확인하기 위한 항목",
+        "url": "https://example.com/very/long/path",
+        "order": 10
+      }
+    ]
+  }
+}

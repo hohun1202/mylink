@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": "LINK_NOT_FOUND",
+    "message": "링크를 찾을 수 없어요"
+  }
+}

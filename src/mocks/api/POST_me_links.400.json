@@ -1,0 +1,10 @@
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "입력값을 확인해 주세요",
+    "fields": {
+      "title": "제목을 입력해 주세요",
+      "url": "올바른 주소 형식이 아니에요 (예: https://example.com)"
+    }
+  }
+}
