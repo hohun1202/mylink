@@ -332,7 +332,14 @@ export default function Home() {
   const handleShare = async () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
     if (typeof navigator !== "undefined" && navigator.share) {
-      try { await navigator.share({ title: "HOHYUN JANG", url }); return; } catch { /* fallback */ }
+      try {
+        await navigator.share({ title: "HOHYUN JANG", url });
+        return;
+      } catch (e) {
+        // 사용자가 공유 창을 닫은 것(AbortError)은 실패가 아니므로 아무것도 하지 않는다
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        /* 그 밖의 실패는 아래 링크 복사로 대신 */
+      }
     }
     try {
       await navigator.clipboard.writeText(url);
