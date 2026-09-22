@@ -333,7 +333,7 @@ export default function Home() {
     const url = typeof window !== "undefined" ? window.location.href : "";
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title: "HOHYUN JANG", url });
+        await navigator.share({ title: "HOHYEON JANG", url });
         return;
       } catch (e) {
         // 사용자가 공유 창을 닫은 것(AbortError)은 실패가 아니므로 아무것도 하지 않는다
@@ -408,7 +408,7 @@ export default function Home() {
                 maxWidth: 200,
               }}
             >
-              <span style={{ fontWeight: 700 }}>Welcome to HOHYUN.DEV!</span>
+              <span style={{ fontWeight: 700 }}>Welcome to HOHYEON.DEV!</span>
               {" "}프로필 &amp; 링크 허브
               {/* Bubble tail */}
               <span
@@ -659,7 +659,7 @@ export default function Home() {
           {/* Wordmark + tagline */}
           <div className="min-w-0 flex-1">
             {/* Hero wordmark */}
-            <div className="hero-wordmark leading-none">HOHYUN</div>
+            <div className="hero-wordmark leading-none">HOHYEON</div>
             <div className="hero-wordmark leading-none">JANG</div>
             <div
               className="mt-2"
@@ -832,7 +832,7 @@ export default function Home() {
                         fontFamily: "Arial, Helvetica, sans-serif",
                       }}
                     >
-                      What is Hohyun&apos;s strongest area?
+                      What is Hohyeon&apos;s strongest area?
                     </p>
                     <div className="flex flex-col gap-1.5 mb-3">
                       {POLL_OPTIONS.map((opt) => (
@@ -1019,7 +1019,7 @@ export default function Home() {
               fontFamily: "Arial, Helvetica, sans-serif",
             }}
           >
-            ©2026 장호현 (HOHYUN JANG) · All Rights Reserved
+            ©2026 장호현 (HOHYEON JANG) · All Rights Reserved
           </span>
 
           <div className="flex items-center gap-3">

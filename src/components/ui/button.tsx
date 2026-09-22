@@ -17,6 +17,8 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        // 사용자 지정 보라(#5B5FC7) 버튼 — /mypage 의 "추가"
+        brand: "bg-brand font-bold text-brand-foreground hover:bg-brand/85",
         // design.md(Nintendo 2001) 입체 판: 위·왼쪽은 밝게, 오른쪽·아래는 인디고로 눌린 금속판처럼
         bevel:
           "border-t-bevel border-l-bevel border-r-border border-b-2 border-b-border bg-card text-card-foreground hover:bg-muted",

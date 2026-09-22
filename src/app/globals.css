@@ -52,6 +52,8 @@
   --carbon: #21242e; /* 아이콘 칸·아바타 테두리 */
   --carbon-foreground: #ffffff;
   --accent-edge: #c86a00; /* 주황 버튼 테두리 */
+  --brand: #5b5fc7; /* /mypage 추가 버튼 색 (사용자 지정 · design.md 팔레트 밖) */
+  --brand-foreground: #ffffff;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -76,6 +78,8 @@
   --color-carbon: var(--carbon);
   --color-carbon-foreground: var(--carbon-foreground);
   --color-accent-edge: var(--accent-edge);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
   --shadow-hard: 3px 3px 0 var(--carbon); /* 번지지 않는 각진 그림자 */
   --text-shadow-hard: 3px 3px 0 var(--border); /* 제목 글자의 인디고 그림자 */
   --color-sidebar-ring: var(--sidebar-ring);

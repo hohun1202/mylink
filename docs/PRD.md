@@ -2,6 +2,7 @@
 
 - 작성일: 2026-09-15
 - 최종 수정: 2026-09-22 — 디자인 시스템을 shadcn/ui + `design.md` 로 확정 (1.4절 추가), 더미 데이터 `src/mocks/` 지정 (5.2절 추가)
+- 최종 수정: 2026-09-22 — 링크 추가(F5 일부) 구현: `/dashboard` 다이얼로그 + `/mypage` 페이지 안 폼 (6장·10장 6번)
 - 최종 수정: 2026-09-22 — **`design.md` = Nintendo 2001 스타일로 확정**, `docs/design.md` 작성 및 shadcn 토큰 매핑 (1.4절, 10장 7번)
 - 최종 수정: 2026-09-22 — **스타일은 Tailwind CSS 유틸리티 클래스로 통일, CSS Module 사용 금지** (1.3·1.4절), 1단계 공개 프로필 페이지 구현 반영 (5.2·9.1·10장)
 - 버전: v0.2 (MVP)
@@ -287,7 +288,7 @@
 |             \         /              |
 |              '-------'               |
 |                                      |
-|             Hohyun Jang              |  <- (2) 이름 (굵게, 가운데)
+|             Hohyeon Jang             |  <- (2) 이름 (굵게, 가운데)
 |     Web developer who loves clean    |  <- (3) 한 줄 소개
 |        code and good UX              |       (최대 80자, 줄바꿈 허용)
 |                                      |
@@ -407,6 +408,9 @@ type Link = {
 | `/onboarding` | 핸들 설정 | 핸들 없음 (+ 로그인 구현 시 로그인 필요) |
 | `/dashboard` | 프로필·링크·테마 편집, 핸들 변경 (+ 로그인 구현 시 로그아웃) | 핸들 있음 (+ 로그인 구현 시 로그인 필요) |
 | `/<핸들>` | 공개 프로필 페이지 | 누구나 |
+| `/mypage` | 내 링크 관리 — 제목 → 링크 추가 폼(페이지 안) → 링크 목록. 추가 버튼 색 `#5B5FC7`(`--brand` 토큰, `Button variant="brand"`) | 누구나 (임시) |
+
+> **구현 현황 (2026-09-22)**: 링크 **추가**만 구현. `/dashboard` 는 '링크 추가' 다이얼로그, `/mypage` 는 페이지 안 폼으로 같은 로직(`useLinkForm` 훅)을 쓴다. 로그인·핸들 설정(F3)이 없어 페이지 주인은 임시로 `hohun1202`(`MY_HANDLE`)로 고정. 데이터는 서버·DB 없이 Zustand 스토어 → LocalStorage(`mylink:profiles`)에 저장된다. 수정·삭제·순서 변경은 아직 없음.
 
 - 조건에 맞지 않게 접근하면 알맞은 화면으로 돌려보낸다. (예: 핸들 없이 `/dashboard` 접근 → `/onboarding`, 로그인 구현 시 비로그인으로 `/dashboard` 접근 → `/login`)
 
@@ -489,6 +493,6 @@ type Link = {
 | 3 | 이름·소개 최대 길이 | 30자 / 80자 |
 | 4 | 테마 프리셋 개수와 구체 목록 | 3~5개, 디자인 단계에서 확정 |
 | 5 | 기본 아바타 개수·스타일 | 디자인 단계에서 확정 |
-| 6 | URL에 `https://` 자동 보정 여부 | 구현 시 결정 |
+| 6 | ~~URL에 `https://` 자동 보정 여부~~ | **해결 (2026-09-22)**: 앞부분(`https://` 등)이 없으면 자동으로 `https://` 를 붙인다. 붙인 뒤에도 도메인에 점이 없으면(`abc`) 거절. 또 F8 메일 아이콘 규칙에 맞춰 `mailto:이름@도메인` 도 허용 (`src/lib/validateLink.ts`) |
 | 7 | ~~기준이 되는 `design.md` 파일의 위치, 그리고 기존 Nintendo 2001 스타일과 같은 디자인인지 여부~~ | **해결 (2026-09-22)**: Nintendo 2001 스타일로 확정. 원본 파일이 없어 랜딩·`globals.css` 값에서 되살려 `docs/design.md` 작성, shadcn 토큰에 매핑 완료. 옛 변수·전역 클래스 정리는 랜딩(F1) 재작성 때 |
 | 8 | 링크 아이콘 중 브랜드 아이콘(GitHub·YouTube·Instagram·X) 출처 | `lucide-react` 에는 브랜드 아이콘이 없음(2026-09-22 확인). 별도 아이콘 라이브러리 또는 SVG 직접 추가 중 선택. 메일·기본 링크는 lucide(`Mail`, `Link`) 사용. **확정 전까지 임시로** lucide 대체 아이콘 사용: GitHub `FolderGit2`, YouTube `SquarePlay`, Instagram `Camera`, X `AtSign`, 블로그 `NotebookPen` (`src/components/link/LinkIcon.tsx` 의 `ICONS` 한 곳에서 교체) |

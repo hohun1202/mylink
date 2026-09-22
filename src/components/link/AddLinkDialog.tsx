@@ -4,7 +4,7 @@
 // 저장을 누르면 입력값을 검사하고, 통과하면 스토어(로컬 상태)에 추가한 뒤 창을 닫습니다.
 // 검사에 실패하면 저장하지 않고 입력칸 아래에 오류 문구를 보여줍니다.
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { Plus } from "lucide-react"; // "+" 아이콘
 import { Button } from "@/components/ui/button";
 import {
@@ -19,39 +19,17 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { validateLink, type LinkErrors, type LinkInput } from "@/lib/validateLink";
-import { useProfileStore } from "@/store/useProfileStore";
-
-const EMPTY: LinkInput = { title: "", url: "" }; // 빈 폼
+import { useLinkForm } from "@/components/link/useLinkForm"; // 입력값·검사·추가 공통 로직
 
 export default function AddLinkDialog({ handle }: { handle: string }) {
-  const addLink = useProfileStore((s) => s.addLink); // 스토어의 링크 추가 동작
   const [open, setOpen] = useState(false); // 다이얼로그가 열려 있는지
-  const [form, setForm] = useState<LinkInput>(EMPTY); // 입력 중인 값
-  const [errors, setErrors] = useState<LinkErrors>({}); // 칸별 오류 문구
+  // 추가에 성공하면 창을 닫는다 (입력 칸 비우기는 훅이 해 줌)
+  const { form, errors, update, reset, submit } = useLinkForm(handle, () => setOpen(false));
 
   // 창이 열리거나 닫힐 때마다 폼을 비워, 다음에 열었을 때 이전 입력이 남지 않게 한다
   function handleOpenChange(next: boolean) {
     setOpen(next);
-    setForm(EMPTY);
-    setErrors({});
-  }
-
-  // 입력칸 하나를 바꿀 때: 값을 반영하고 그 칸의 오류 문구는 지운다
-  function update(key: keyof LinkInput, value: string) {
-    setForm((f) => ({ ...f, [key]: value }));
-    setErrors((e) => ({ ...e, [key]: undefined }));
-  }
-
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault(); // 브라우저 기본 동작(페이지 새로고침) 막기
-    const result = validateLink(form);
-    if (!result.ok) {
-      setErrors(result.errors); // 저장하지 않고 오류만 보여줌
-      return;
-    }
-    addLink(handle, result.value); // 로컬 상태에 추가 (LocalStorage에도 자동 저장)
-    handleOpenChange(false); // 창 닫기
+    reset();
   }
 
   return (
@@ -64,7 +42,7 @@ export default function AddLinkDialog({ handle }: { handle: string }) {
 
       <DialogContent>
         {/* noValidate: 브라우저 기본 검사 말풍선 대신 우리 규칙(validateLink)의 문구를 보여준다 */}
-        <form onSubmit={handleSubmit} noValidate className="grid gap-4">
+        <form onSubmit={submit} noValidate className="grid gap-4">
           <DialogHeader>
             <DialogTitle>링크 추가</DialogTitle>
             <DialogDescription>방문자에게 보일 버튼 이름과 이동할 주소를 입력하세요.</DialogDescription>

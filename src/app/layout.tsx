@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 // 따라서 웹폰트를 따로 내려받지 않습니다 — 방문자 로딩 속도를 위해서입니다.
 
 export const metadata: Metadata = {
-  title: "장호현 (Hohyun Jang) | 프로필 & 링크트리",
+  title: "장호현 (Hohyeon Jang) | 프로필 & 링크트리",
   description:
     "사용자 경험과 깨끗한 코드를 지향하는 웹 개발자 장호현입니다. 프로젝트, 기술 스택, 링크 및 연락처를 확인하세요.",
   keywords: ["장호현", "웹 개발자", "프론트엔드", "포트폴리오", "Next.js", "React", "mylink"],
