@@ -12,10 +12,11 @@ import AddLinkDialog from "@/components/link/AddLinkDialog";
 import LinkList from "@/components/link/LinkList";
 import ProfileNotFound from "@/components/profile/ProfileNotFound";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
-import { MY_HANDLE, useProfileStore, useStoreHydration } from "@/store/useProfileStore";
+import { MY_HANDLE, useFirestoreLinks, useProfileStore, useStoreHydration } from "@/store/useProfileStore";
 
 export default function DashboardView() {
   const hasHydrated = useStoreHydration(); // LocalStorage 복원 시작 + 끝났는지
+  useFirestoreLinks(MY_HANDLE); // 복원이 끝나면 Firestore 에서 내 링크를 최신순으로 불러오기
   const profile = useProfileStore((s) => s.profiles.find((p) => p.handle === MY_HANDLE)); // 내 프로필
 
   return (

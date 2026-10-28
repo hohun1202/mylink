@@ -9,11 +9,12 @@ import LinkList from "@/components/link/LinkList"; // 링크 버튼 목록
 import ProfileHeader from "@/components/profile/ProfileHeader"; // 아바타·이름·소개
 import ProfileNotFound from "@/components/profile/ProfileNotFound"; // 없는 핸들 안내
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton"; // 로딩 자리표시
-import { MY_HANDLE, useProfileStore, useStoreHydration } from "@/store/useProfileStore";
+import { MY_HANDLE, useFirestoreLinks, useProfileStore, useStoreHydration } from "@/store/useProfileStore";
 
 export default function ProfileView({ handle }: { handle: string }) {
   // LocalStorage 복원을 시작하고 끝났는지 받기 (하이드레이션 오류 방지 · PRD 5.1)
   const hasHydrated = useStoreHydration();
+  useFirestoreLinks(handle); // 복원이 끝나면 Firestore 에서 내 링크를 최신순으로 불러오기
   // 주소의 핸들과 같은 프로필 찾기 (없으면 undefined)
   const profile = useProfileStore((s) => s.profiles.find((p) => p.handle === handle));
 

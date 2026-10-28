@@ -2,12 +2,15 @@
 // 여러 화면이 같은 프로필 데이터를 보도록 한곳에 두고,
 // persist 미들웨어로 LocalStorage에 자동 저장·복원합니다.
 // 링크 추가는 Firestore 에 먼저 저장한 뒤(useLinkForm), 그 결과를 여기(로컬 상태)에도 반영합니다.
+// 페이지가 열리면 Firestore 에 저장된 내 링크를 불러와 로컬 목록을 그걸로 바꿉니다(useFirestoreLinks).
 
 import { useEffect } from "react";
 import { create } from "zustand"; // 스토어를 만드는 함수
 import { persist, createJSONStorage } from "zustand/middleware"; // LocalStorage 연동 도구
 import type { Link, Profile } from "@/lib/types"; // 링크·프로필 데이터 모양
 import { MOCK_PROFILES } from "@/lib/mockData"; // 처음 넣어 줄 샘플 데이터
+import { fetchLinks } from "@/lib/linksFirestore"; // Firestore 불러오기 함수
+import { MY_HANDLE } from "@/lib/me";
 
 // "내 페이지" 핸들은 src/lib/me.ts 에 있다. 기존 화면들이 여기서 가져다 쓰므로 그대로 다시 내보낸다
 export { MY_HANDLE } from "@/lib/me";
@@ -16,7 +19,8 @@ export { MY_HANDLE } from "@/lib/me";
 type ProfileState = {
   profiles: Profile[]; // 저장된 모든 프로필
   hasHydrated: boolean; // LocalStorage에서 불러오기를 끝냈는지 (저장하지 않음)
-  addLink: (handle: string, link: Link) => void; // 링크를 목록 맨 끝에 추가 (F5)
+  addLink: (handle: string, link: Link) => void; // 링크를 목록 맨 앞에 추가 (최신순이므로) (F5)
+  setLinks: (handle: string, links: Link[]) => void; // 링크 목록을 통째로 바꿈 (Firestore 에서 불러온 값으로)
   removeLink: (handle: string, linkId: string) => void; // 링크 하나 삭제 (F5 · 시나리오 B-4)
 };
 
@@ -30,10 +34,14 @@ export const useProfileStore = create<ProfileState>()(
         set((state) => ({
           profiles: state.profiles.map((p) =>
             p.handle === handle
-              ? // 새 링크는 맨 끝에 붙인다 (배열 순서 = 화면 순서). id는 Firestore 문서 id
-                { ...p, links: [...p.links, link] }
+              ? // 새 링크는 맨 앞에 붙인다 (목록이 createdAt 최신순이므로). id는 Firestore 문서 id
+                { ...p, links: [link, ...p.links] }
               : p,
           ),
+        })),
+      setLinks: (handle, links) =>
+        set((state) => ({
+          profiles: state.profiles.map((p) => (p.handle === handle ? { ...p, links } : p)),
         })),
       removeLink: (handle, linkId) =>
         set((state) => ({
@@ -66,4 +74,27 @@ export function useStoreHydration(): boolean {
     if (!useProfileStore.persist.hasHydrated()) useProfileStore.persist.rehydrate();
   }, []);
   return hasHydrated;
+}
+
+// 내 페이지가 열릴 때 Firestore(users/anonymous/links)에서 링크를 불러와 로컬 목록을 바꾸는 훅
+// handle 이 내 핸들이 아니면 아무것도 하지 않는다 (Firestore 에는 아직 내 링크만 있으므로)
+export function useFirestoreLinks(handle: string) {
+  const hasHydrated = useProfileStore((s) => s.hasHydrated);
+  const setLinks = useProfileStore((s) => s.setLinks);
+  useEffect(() => {
+    // LocalStorage 복원이 끝난 뒤에 불러와야, 복원이 Firestore 값을 옛 값으로 덮어쓰지 않는다
+    if (!hasHydrated || handle !== MY_HANDLE) return;
+    let cancelled = false; // 불러오는 사이에 화면을 떠났으면 결과를 버리기 위한 표시
+    fetchLinks()
+      .then((links) => {
+        if (!cancelled) setLinks(handle, links);
+      })
+      .catch((err) => {
+        // 실패하면 LocalStorage 에 있던 목록을 그대로 보여준다. 원인(권한 규칙, 네트워크 등)은 콘솔에서 확인
+        console.error("링크 불러오기 실패:", err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [hasHydrated, handle, setLinks]);
 }
