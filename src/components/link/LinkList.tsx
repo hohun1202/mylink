@@ -8,7 +8,7 @@
 // loading 을 주면(Firestore 에서 불러오는 중) 위에 "불러오는 중" 줄을 띄우고 목록을 흐리게 잠급니다.
 
 import { useState } from "react";
-import { Link as LinkGlyph, LoaderCircle, Pencil, Trash2 } from "lucide-react";
+import { Link as LinkGlyph, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton"; // 회색 자리표시 상자
@@ -114,24 +114,32 @@ function LinkListBody({
                 )}
               </div>
               <div className="flex shrink-0 flex-col justify-center gap-1">
+                {/* 수정 버튼: 파란 바탕 + 흰 글자 + ✏️ */}
                 <Button
                   type="button"
-                  variant="outline"
                   size="sm"
-                  onClick={() => setEditingId(link.id)}
+                  className="bg-blue-600 font-bold text-white hover:bg-blue-700"
+                  onClick={() => {
+                    console.log("수정 버튼 클릭:", link); // 어떤 링크를 눌렀는지 개발자 도구 콘솔에 남긴다
+                    setEditingId(link.id);
+                  }}
                   aria-label={`${link.title} 수정`} // 화면 낭독기가 어느 링크의 버튼인지 읽어 주게
                 >
-                  <Pencil aria-hidden />
+                  <span aria-hidden>✏️</span>
                   수정
                 </Button>
+                {/* 삭제 버튼: 빨간 바탕 + 흰 글자 + 🗑️ */}
                 <Button
                   type="button"
-                  variant="destructive"
                   size="sm"
-                  onClick={() => setPending(link)}
+                  className="bg-destructive font-bold text-white hover:bg-destructive/85"
+                  onClick={() => {
+                    console.log("삭제 버튼 클릭:", link);
+                    setPending(link); // 바로 지우지 않고 확인 모달을 연다
+                  }}
                   aria-label={`${link.title} 삭제`}
                 >
-                  <Trash2 aria-hidden />
+                  <span aria-hidden>🗑️</span>
                   삭제
                 </Button>
               </div>
