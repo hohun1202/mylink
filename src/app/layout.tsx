@@ -16,12 +16,16 @@ export const metadata: Metadata = {
     type: "website",
     locale: "ko_KR",
   },
+  // 링크 제목·영문 이름이 많아 크롬이 영어 페이지로 착각하고 번역을 제안합니다.
+  // <meta name="google" content="notranslate"> 로 번역 팝업을 끕니다.
+  other: { google: "notranslate" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="ko"
+      translate="no" // 페이지 전체를 자동 번역 대상에서 뺍니다
       className={cn("h-full antialiased", "font-sans")}
     >
       <body className="min-h-full flex flex-col">{children}</body>
