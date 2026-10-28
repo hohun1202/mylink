@@ -3,6 +3,7 @@
 // "링크 추가" 버튼 + 추가 폼 다이얼로그입니다. (PRD F5 · 시나리오 B-2)
 // 저장을 누르면 입력값을 검사하고, 통과하면 Firestore 에 저장·스토어(로컬 상태)에 추가한 뒤 창을 닫습니다.
 // 검사에 실패하면 저장하지 않고 입력칸 아래에 오류 문구를 보여줍니다.
+// 저장하는 동안에는 [추가하기] 버튼에 도는 아이콘이 나오고, 창이 닫히지 않습니다. 저장이 끝나면 창이 저절로 닫힙니다.
 
 import { useState } from "react";
 import { LoaderCircle, Plus } from "lucide-react"; // "+" 아이콘 · 도는 로딩 아이콘
@@ -33,7 +34,9 @@ export default function AddLinkDialog({ handle, label = "링크 추가", fullWid
   const { form, errors, saving, saveError, update, reset, submit } = useLinkForm(handle, () => setOpen(false));
 
   // 창이 열리거나 닫힐 때마다 폼을 비워, 다음에 열었을 때 이전 입력이 남지 않게 한다
+  // 저장 중에는 바깥 클릭·Esc 로 닫히지 않게 막는다 (저장이 끝나면 훅이 창을 닫아 줌)
   function handleOpenChange(next: boolean) {
+    if (!next && saving) return;
     setOpen(next);
     reset();
   }
@@ -92,11 +95,11 @@ export default function AddLinkDialog({ handle, label = "링크 추가", fullWid
           {saveError && <FieldError>{saveError}</FieldError>}
 
           <DialogFooter>
-            <DialogClose render={<Button type="button" variant="outline" />}>취소</DialogClose>
+            <DialogClose render={<Button type="button" variant="outline" disabled={saving} />}>취소</DialogClose>
             <Button type="submit" disabled={saving}>
-              {/* 저장 중에는 도는 아이콘을 함께 보여준다 */}
-              {saving && <LoaderCircle className="animate-spin" aria-hidden />}
-              {saving ? "저장 중…" : "저장"}
+              {/* 저장 중에는 "+" 대신 빙글빙글 도는 아이콘 (인라인 수정 폼의 [저장] 버튼과 같은 모양) */}
+              {saving ? <LoaderCircle className="animate-spin" aria-hidden /> : <Plus aria-hidden />}
+              {saving ? "추가 중…" : "추가하기"}
             </Button>
           </DialogFooter>
         </form>
