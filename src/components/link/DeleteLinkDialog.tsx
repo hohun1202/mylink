@@ -77,7 +77,13 @@ export default function DeleteLinkDialog({ link, handle, onClose }: DeleteLinkDi
         <AlertDialogFooter>
           <AlertDialogCancel disabled={deleting}>취소</AlertDialogCancel>
           {/* AlertDialogAction 은 눌러도 저절로 닫히지 않으므로, 삭제가 끝난 뒤 직접 닫는다 */}
-          <AlertDialogAction variant="destructive" onClick={confirmDelete} disabled={deleting}>
+          {/* destructive 변형은 연한 빨강 배경이라, 마지막 확인 버튼만 진한 빨강 바탕 + 흰 글자로 칠한다 */}
+          <AlertDialogAction
+            variant="destructive"
+            className="bg-destructive font-bold text-white hover:bg-destructive/85 dark:bg-destructive dark:hover:bg-destructive/85"
+            onClick={confirmDelete}
+            disabled={deleting}
+          >
             {deleting ? <LoaderCircle className="animate-spin" aria-hidden /> : <Trash2 aria-hidden />}
             {deleting ? "삭제 중…" : "삭제하기"}
           </AlertDialogAction>
