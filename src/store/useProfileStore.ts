@@ -3,6 +3,7 @@
 // persist 미들웨어로 LocalStorage에 자동 저장·복원합니다.
 // 링크 추가는 Firestore 에 먼저 저장한 뒤(useLinkForm), 그 결과를 여기(로컬 상태)에도 반영합니다.
 // 페이지가 열리면 Firestore 에 저장된 내 링크를 불러와 로컬 목록을 그걸로 바꿉니다(useFirestoreLinks).
+// 링크 수정·삭제는 Firestore 에 먼저 반영한 뒤, 목록을 Firestore 에서 다시 불러와 바꿉니다(reloadLinks · 갱신형).
 
 import { useEffect } from "react";
 import { create } from "zustand"; // 스토어를 만드는 함수
@@ -22,7 +23,6 @@ type ProfileState = {
   linksLoading: boolean; // Firestore 에서 링크를 불러오는 중인지 (로딩 표시용 · 저장하지 않음)
   addLink: (handle: string, link: Link) => void; // 링크를 목록 맨 앞에 추가 (최신순이므로) (F5)
   setLinks: (handle: string, links: Link[]) => void; // 링크 목록을 통째로 바꿈 (Firestore 에서 불러온 값으로)
-  removeLink: (handle: string, linkId: string) => void; // 링크 하나 삭제 (F5 · 시나리오 B-4)
 };
 
 export const useProfileStore = create<ProfileState>()(
@@ -44,13 +44,6 @@ export const useProfileStore = create<ProfileState>()(
       setLinks: (handle, links) =>
         set((state) => ({
           profiles: state.profiles.map((p) => (p.handle === handle ? { ...p, links } : p)),
-        })),
-      removeLink: (handle, linkId) =>
-        set((state) => ({
-          profiles: state.profiles.map((p) =>
-            // 해당 프로필에서 id가 같은 링크만 빼고 나머지는 순서 그대로 남긴다
-            p.handle === handle ? { ...p, links: p.links.filter((l) => l.id !== linkId) } : p,
-          ),
         })),
     }),
     {
@@ -105,4 +98,11 @@ export function useFirestoreLinks(handle: string): boolean {
     };
   }, [hasHydrated, handle, setLinks]);
   return handle === MY_HANDLE && linksLoading; // 남의 페이지에서는 로딩 표시를 띄우지 않는다
+}
+
+// 링크를 수정·삭제한 직후 부르는 함수: Firestore 에서 목록을 다시 불러와 로컬 목록을 통째로 바꾼다 (갱신형)
+// 실시간 구독(onSnapshot)이 아니라, 저장이 끝난 순간에 한 번만 다시 읽어 온다
+export async function reloadLinks(handle: string): Promise<void> {
+  const links = await fetchLinks();
+  useProfileStore.getState().setLinks(handle, links);
 }

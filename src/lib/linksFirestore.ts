@@ -1,7 +1,7 @@
 // Firestore 에 링크를 저장하고 불러오는 함수들을 모아 둔 파일입니다.
 // 저장 위치: users/anonymous/links (로그인 기능이 생기기 전까지는 모든 링크를 "anonymous" 사용자 아래에 둠)
 
-import { addDoc, collection, getDocs, orderBy, query, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { LinkInput } from "@/lib/validateLink"; // 검사를 통과한 링크 입력값 모양
 import type { Link } from "@/lib/types"; // 화면에서 쓰는 링크 모양
@@ -31,4 +31,19 @@ export async function fetchLinks(): Promise<Link[]> {
     title: doc.data().title,
     url: doc.data().url,
   }));
+}
+
+// 이미 저장된 링크 하나의 제목·주소를 고친다. (추가할 때와 같은 경로 users/anonymous/links/<문서 id>)
+// createdAt 은 그대로 두어 목록 순서가 바뀌지 않고, updatedAt 만 고친 시각으로 바뀐다
+export async function updateLink(id: string, link: LinkInput): Promise<void> {
+  await updateDoc(doc(linksCollection, id), {
+    title: link.title,
+    url: link.url,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+// 링크 하나를 Firestore 에서 지운다 (같은 경로의 문서를 삭제)
+export async function deleteLink(id: string): Promise<void> {
+  await deleteDoc(doc(linksCollection, id));
 }

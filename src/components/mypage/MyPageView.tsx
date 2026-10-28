@@ -46,7 +46,7 @@ export default function MyPageView() {
                 links={profile.links}
                 loading={linksLoading} // Firestore 에서 불러오는 중이면 로딩 표시
                 emptyMessage="아직 링크가 없어요. 위에서 추가해 보세요"
-                deletableHandle={MY_HANDLE} // 우클릭 삭제
+                editableHandle={MY_HANDLE} // 수정·삭제 버튼
               />
             </section>
           </>

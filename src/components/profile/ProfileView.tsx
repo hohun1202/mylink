@@ -33,8 +33,8 @@ export default function ProfileView({ handle }: { handle: string }) {
             <ProfileHeader name={profile.name} bio={profile.bio} avatarId={profile.avatarId} />
             {/* 내 페이지일 때만 링크 추가 버튼을 보여준다 (로그인이 없어 MY_HANDLE 로 판단) */}
             {handle === MY_HANDLE && <AddLinkDialog handle={handle} label="새로운 링크 추가하기" fullWidth />}
-            {/* 내 페이지면 우클릭 삭제도 켠다 */}
-            <LinkList links={profile.links} loading={linksLoading} deletableHandle={handle === MY_HANDLE ? handle : undefined} />
+            {/* 내 페이지면 링크마다 수정·삭제 버튼도 보여준다 */}
+            <LinkList links={profile.links} loading={linksLoading} editableHandle={handle === MY_HANDLE ? handle : undefined} />
           </>
         )}
       </div>
