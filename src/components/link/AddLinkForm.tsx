@@ -5,7 +5,7 @@
 // 빈 칸이 있으면 브라우저 알림창(alert)으로 알려 줍니다.
 
 import { type FormEvent } from "react";
-import { Plus } from "lucide-react";
+import { LoaderCircle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -66,7 +66,8 @@ export default function AddLinkForm({ handle }: { handle: string }) {
 
         {/* 3. 추가 버튼 — type="submit" 이라 입력 칸에서 Enter 를 눌러도 추가됨. 저장 중에는 잠금 */}
         <Button type="submit" variant="brand" size="lg" disabled={saving}>
-          <Plus aria-hidden />
+          {/* 저장 중에는 "+" 대신 빙글빙글 도는 아이콘 */}
+          {saving ? <LoaderCircle className="animate-spin" aria-hidden /> : <Plus aria-hidden />}
           {saving ? "저장 중…" : "추가"}
         </Button>
       </FieldGroup>

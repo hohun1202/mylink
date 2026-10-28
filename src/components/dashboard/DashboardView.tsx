@@ -16,7 +16,7 @@ import { MY_HANDLE, useFirestoreLinks, useProfileStore, useStoreHydration } from
 
 export default function DashboardView() {
   const hasHydrated = useStoreHydration(); // LocalStorage 복원 시작 + 끝났는지
-  useFirestoreLinks(MY_HANDLE); // 복원이 끝나면 Firestore 에서 내 링크를 최신순으로 불러오기
+  const linksLoading = useFirestoreLinks(MY_HANDLE); // 복원이 끝나면 Firestore 에서 내 링크를 최신순으로 불러오기
   const profile = useProfileStore((s) => s.profiles.find((p) => p.handle === MY_HANDLE)); // 내 프로필
 
   return (
@@ -48,6 +48,7 @@ export default function DashboardView() {
             <CardContent>
               <LinkList
                 links={profile.links}
+                loading={linksLoading} // Firestore 에서 불러오는 중이면 로딩 표시
                 emptyMessage="아직 링크가 없어요. '링크 추가'를 눌러 보세요"
                 deletableHandle={MY_HANDLE} // 우클릭 삭제
               />

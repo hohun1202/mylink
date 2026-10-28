@@ -19,6 +19,7 @@ export { MY_HANDLE } from "@/lib/me";
 type ProfileState = {
   profiles: Profile[]; // 저장된 모든 프로필
   hasHydrated: boolean; // LocalStorage에서 불러오기를 끝냈는지 (저장하지 않음)
+  linksLoading: boolean; // Firestore 에서 링크를 불러오는 중인지 (로딩 표시용 · 저장하지 않음)
   addLink: (handle: string, link: Link) => void; // 링크를 목록 맨 앞에 추가 (최신순이므로) (F5)
   setLinks: (handle: string, links: Link[]) => void; // 링크 목록을 통째로 바꿈 (Firestore 에서 불러온 값으로)
   removeLink: (handle: string, linkId: string) => void; // 링크 하나 삭제 (F5 · 시나리오 B-4)
@@ -30,6 +31,7 @@ export const useProfileStore = create<ProfileState>()(
     (set): ProfileState => ({
       profiles: MOCK_PROFILES, // LocalStorage가 비어 있으면 이 값이 쓰이고 곧바로 저장됨
       hasHydrated: false,
+      linksLoading: false,
       addLink: (handle, link) =>
         set((state) => ({
           profiles: state.profiles.map((p) =>
@@ -78,13 +80,16 @@ export function useStoreHydration(): boolean {
 
 // 내 페이지가 열릴 때 Firestore(users/anonymous/links)에서 링크를 불러와 로컬 목록을 바꾸는 훅
 // handle 이 내 핸들이 아니면 아무것도 하지 않는다 (Firestore 에는 아직 내 링크만 있으므로)
-export function useFirestoreLinks(handle: string) {
+// 돌려주는 값: 지금 불러오는 중인지 (화면에 로딩 표시를 띄울 때 씀)
+export function useFirestoreLinks(handle: string): boolean {
   const hasHydrated = useProfileStore((s) => s.hasHydrated);
+  const linksLoading = useProfileStore((s) => s.linksLoading);
   const setLinks = useProfileStore((s) => s.setLinks);
   useEffect(() => {
     // LocalStorage 복원이 끝난 뒤에 불러와야, 복원이 Firestore 값을 옛 값으로 덮어쓰지 않는다
     if (!hasHydrated || handle !== MY_HANDLE) return;
     let cancelled = false; // 불러오는 사이에 화면을 떠났으면 결과를 버리기 위한 표시
+    useProfileStore.setState({ linksLoading: true }); // 로딩 표시 켜기
     fetchLinks()
       .then((links) => {
         if (!cancelled) setLinks(handle, links);
@@ -92,9 +97,12 @@ export function useFirestoreLinks(handle: string) {
       .catch((err) => {
         // 실패하면 LocalStorage 에 있던 목록을 그대로 보여준다. 원인(권한 규칙, 네트워크 등)은 콘솔에서 확인
         console.error("링크 불러오기 실패:", err);
-      });
+      })
+      // 성공하든 실패하든 끝나면 로딩 표시 끄기
+      .finally(() => useProfileStore.setState({ linksLoading: false }));
     return () => {
       cancelled = true;
     };
   }, [hasHydrated, handle, setLinks]);
+  return handle === MY_HANDLE && linksLoading; // 남의 페이지에서는 로딩 표시를 띄우지 않는다
 }

@@ -5,7 +5,7 @@
 // 검사에 실패하면 저장하지 않고 입력칸 아래에 오류 문구를 보여줍니다.
 
 import { useState } from "react";
-import { Plus } from "lucide-react"; // "+" 아이콘
+import { LoaderCircle, Plus } from "lucide-react"; // "+" 아이콘 · 도는 로딩 아이콘
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -93,7 +93,11 @@ export default function AddLinkDialog({ handle, label = "링크 추가", fullWid
 
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" />}>취소</DialogClose>
-            <Button type="submit" disabled={saving}>{saving ? "저장 중…" : "저장"}</Button>
+            <Button type="submit" disabled={saving}>
+              {/* 저장 중에는 도는 아이콘을 함께 보여준다 */}
+              {saving && <LoaderCircle className="animate-spin" aria-hidden />}
+              {saving ? "저장 중…" : "저장"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

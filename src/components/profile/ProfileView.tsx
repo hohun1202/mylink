@@ -14,7 +14,7 @@ import { MY_HANDLE, useFirestoreLinks, useProfileStore, useStoreHydration } from
 export default function ProfileView({ handle }: { handle: string }) {
   // LocalStorage 복원을 시작하고 끝났는지 받기 (하이드레이션 오류 방지 · PRD 5.1)
   const hasHydrated = useStoreHydration();
-  useFirestoreLinks(handle); // 복원이 끝나면 Firestore 에서 내 링크를 최신순으로 불러오기
+  const linksLoading = useFirestoreLinks(handle); // 복원이 끝나면 Firestore 에서 내 링크를 최신순으로 불러오기
   // 주소의 핸들과 같은 프로필 찾기 (없으면 undefined)
   const profile = useProfileStore((s) => s.profiles.find((p) => p.handle === handle));
 
@@ -34,7 +34,7 @@ export default function ProfileView({ handle }: { handle: string }) {
             {/* 내 페이지일 때만 링크 추가 버튼을 보여준다 (로그인이 없어 MY_HANDLE 로 판단) */}
             {handle === MY_HANDLE && <AddLinkDialog handle={handle} label="새로운 링크 추가하기" fullWidth />}
             {/* 내 페이지면 우클릭 삭제도 켠다 */}
-            <LinkList links={profile.links} deletableHandle={handle === MY_HANDLE ? handle : undefined} />
+            <LinkList links={profile.links} loading={linksLoading} deletableHandle={handle === MY_HANDLE ? handle : undefined} />
           </>
         )}
       </div>

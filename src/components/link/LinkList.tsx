@@ -4,9 +4,10 @@
 // 링크가 하나도 없으면 shadcn/ui 의 Empty 로 안내 문구를 보여줍니다.
 // deletableHandle 을 주면(내 페이지) 링크를 우클릭(휴대폰은 길게 누르기)해서 삭제할 수 있습니다.
 // 삭제는 바로 되지 않고 확인 창에서 한 번 더 눌러야 합니다. (PRD F5 · 시나리오 B-4)
+// loading 을 주면(Firestore 에서 불러오는 중) 위에 "불러오는 중" 줄을 띄우고 목록을 흐리게 잠급니다.
 
 import { useState } from "react";
-import { Link as LinkGlyph, Trash2 } from "lucide-react";
+import { Link as LinkGlyph, LoaderCircle, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +25,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton"; // 회색 자리표시 상자
 import LinkButton from "@/components/link/LinkButton";
 import type { Link } from "@/lib/types";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -32,9 +34,36 @@ type LinkListProps = {
   links: Link[]; // 보여줄 링크들. 배열 순서 = 화면 순서
   emptyMessage?: string; // 링크가 없을 때 문구 (화면마다 바꿔 쓸 수 있게)
   deletableHandle?: string; // 이 값이 있으면 우클릭 삭제를 켠다 (링크가 속한 프로필의 핸들)
+  loading?: boolean; // Firestore 에서 불러오는 중인지
 };
 
-export default function LinkList({
+export default function LinkList({ loading = false, ...props }: LinkListProps) {
+  // 불러오는 중이 아니면 평소 목록 그대로
+  if (!loading) return <LinkListBody {...props} />;
+
+  return (
+    // aria-busy: 화면 낭독기에 "이 영역은 아직 바뀌는 중"이라고 알려 준다
+    <div className="flex w-full flex-col gap-3" aria-busy>
+      {/* 불러오는 중 안내 줄. role="status": 화면 낭독기가 이 문구를 읽어 준다 */}
+      <p role="status" className="flex items-center justify-center gap-2 text-sm font-bold text-foreground">
+        <LoaderCircle className="size-4 animate-spin" aria-hidden /> {/* 빙글빙글 도는 아이콘 */}
+        링크를 불러오는 중…
+      </p>
+      {props.links.length === 0 ? (
+        // 보여줄 링크가 아직 없으면 "링크가 없어요" 대신 버튼 모양 회색 상자를 깔아 둔다
+        [0, 1, 2].map((i) => <Skeleton key={i} className="h-14 w-full rounded-sm" />)
+      ) : (
+        // 이전 목록은 흐리게(opacity-50) 보여주고, 바뀌기 전까지 누르거나 삭제하지 못하게(pointer-events-none) 잠근다
+        <div className="pointer-events-none opacity-50">
+          <LinkListBody {...props} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 실제 링크 목록 (빈 목록 안내 · 보기 전용 · 우클릭 삭제)
+function LinkListBody({
   links,
   emptyMessage = "아직 등록된 링크가 없어요",
   deletableHandle,
