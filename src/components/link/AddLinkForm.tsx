@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useLinkForm } from "@/components/link/useLinkForm";
 
 export default function AddLinkForm({ handle }: { handle: string }) {
-  const { form, errors, update, submit } = useLinkForm(handle);
+  const { form, errors, saving, saveError, update, submit } = useLinkForm(handle);
 
   // 추가 버튼을 눌렀을 때: 빈 칸이 있으면 알림창(alert)으로 알려 주고 멈춘다
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -61,10 +61,13 @@ export default function AddLinkForm({ handle }: { handle: string }) {
           <FieldError>{errors.url}</FieldError>
         </Field>
 
-        {/* 3. 추가 버튼 — type="submit" 이라 입력 칸에서 Enter 를 눌러도 추가됨 */}
-        <Button type="submit" variant="brand" size="lg">
+        {/* Firestore 저장에 실패했을 때 문구 */}
+        {saveError && <FieldError>{saveError}</FieldError>}
+
+        {/* 3. 추가 버튼 — type="submit" 이라 입력 칸에서 Enter 를 눌러도 추가됨. 저장 중에는 잠금 */}
+        <Button type="submit" variant="brand" size="lg" disabled={saving}>
           <Plus aria-hidden />
-          추가
+          {saving ? "저장 중…" : "추가"}
         </Button>
       </FieldGroup>
     </form>

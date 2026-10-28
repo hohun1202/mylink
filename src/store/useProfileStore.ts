@@ -1,13 +1,12 @@
 // 전역 상태 저장소(Zustand 스토어)입니다.
 // 여러 화면이 같은 프로필 데이터를 보도록 한곳에 두고,
 // persist 미들웨어로 LocalStorage에 자동 저장·복원합니다.
-// 서버가 없으므로 링크 추가 같은 변경도 모두 여기(로컬 상태)에서 처리합니다.
+// 링크 추가는 Firestore 에 먼저 저장한 뒤(useLinkForm), 그 결과를 여기(로컬 상태)에도 반영합니다.
 
 import { useEffect } from "react";
 import { create } from "zustand"; // 스토어를 만드는 함수
 import { persist, createJSONStorage } from "zustand/middleware"; // LocalStorage 연동 도구
-import type { LinkInput } from "@/lib/validateLink"; // 검사를 통과한 링크 입력값 모양
-import type { Profile } from "@/lib/types"; // 프로필 데이터 모양
+import type { Link, Profile } from "@/lib/types"; // 링크·프로필 데이터 모양
 import { MOCK_PROFILES } from "@/lib/mockData"; // 처음 넣어 줄 샘플 데이터
 
 // "내 페이지" 핸들은 src/lib/me.ts 에 있다. 기존 화면들이 여기서 가져다 쓰므로 그대로 다시 내보낸다
@@ -17,7 +16,7 @@ export { MY_HANDLE } from "@/lib/me";
 type ProfileState = {
   profiles: Profile[]; // 저장된 모든 프로필
   hasHydrated: boolean; // LocalStorage에서 불러오기를 끝냈는지 (저장하지 않음)
-  addLink: (handle: string, link: LinkInput) => void; // 링크를 목록 맨 끝에 추가 (F5)
+  addLink: (handle: string, link: Link) => void; // 링크를 목록 맨 끝에 추가 (F5)
   removeLink: (handle: string, linkId: string) => void; // 링크 하나 삭제 (F5 · 시나리오 B-4)
 };
 
@@ -31,8 +30,8 @@ export const useProfileStore = create<ProfileState>()(
         set((state) => ({
           profiles: state.profiles.map((p) =>
             p.handle === handle
-              ? // 새 링크는 맨 끝에 붙인다 (배열 순서 = 화면 순서). id는 브라우저가 만들어 주는 고유 문자열
-                { ...p, links: [...p.links, { id: crypto.randomUUID(), ...link }] }
+              ? // 새 링크는 맨 끝에 붙인다 (배열 순서 = 화면 순서). id는 Firestore 문서 id
+                { ...p, links: [...p.links, link] }
               : p,
           ),
         })),

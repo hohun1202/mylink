@@ -1,7 +1,7 @@
 "use client"; // 입력값·열림 상태를 다루므로 클라이언트 컴포넌트
 
 // "링크 추가" 버튼 + 추가 폼 다이얼로그입니다. (PRD F5 · 시나리오 B-2)
-// 저장을 누르면 입력값을 검사하고, 통과하면 스토어(로컬 상태)에 추가한 뒤 창을 닫습니다.
+// 저장을 누르면 입력값을 검사하고, 통과하면 Firestore 에 저장·스토어(로컬 상태)에 추가한 뒤 창을 닫습니다.
 // 검사에 실패하면 저장하지 않고 입력칸 아래에 오류 문구를 보여줍니다.
 
 import { useState } from "react";
@@ -30,7 +30,7 @@ type AddLinkDialogProps = {
 export default function AddLinkDialog({ handle, label = "링크 추가", fullWidth = false }: AddLinkDialogProps) {
   const [open, setOpen] = useState(false); // 다이얼로그가 열려 있는지
   // 추가에 성공하면 창을 닫는다 (입력 칸 비우기는 훅이 해 줌)
-  const { form, errors, update, reset, submit } = useLinkForm(handle, () => setOpen(false));
+  const { form, errors, saving, saveError, update, reset, submit } = useLinkForm(handle, () => setOpen(false));
 
   // 창이 열리거나 닫힐 때마다 폼을 비워, 다음에 열었을 때 이전 입력이 남지 않게 한다
   function handleOpenChange(next: boolean) {
@@ -88,9 +88,12 @@ export default function AddLinkDialog({ handle, label = "링크 추가", fullWid
             </Field>
           </FieldGroup>
 
+          {/* Firestore 저장에 실패했을 때 문구 */}
+          {saveError && <FieldError>{saveError}</FieldError>}
+
           <DialogFooter>
             <DialogClose render={<Button type="button" variant="outline" />}>취소</DialogClose>
-            <Button type="submit">저장</Button>
+            <Button type="submit" disabled={saving}>{saving ? "저장 중…" : "저장"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
