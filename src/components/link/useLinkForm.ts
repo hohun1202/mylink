@@ -43,7 +43,9 @@ export function useLinkForm(handle: string, onAdded?: () => void) {
     setSaveError(null);
     try {
       const id = await saveLink(result.value); // 2. Firestore(users/anonymous/links)에 저장하고 문서 id 받기
-      addLink(handle, { id, ...result.value }); // 3. 같은 id 로 로컬 목록에도 추가 → 화면이 바로 다시 그려짐
+      // 3. 같은 id 로 로컬 목록에도 추가 → 화면이 바로 다시 그려짐
+      //    수정 시각은 서버 시각을 다시 읽어 오지 않고, 방금 저장한 지금 시각으로 둔다 (다음에 불러올 때 서버 값으로 바뀜)
+      addLink(handle, { id, ...result.value, updatedAt: Date.now() });
       reset(); // 4. 입력 칸 비우기
       onAdded?.(); // 추가 후 할 일 (예: 다이얼로그 닫기)
     } catch (err) {

@@ -2,7 +2,7 @@
 
 // 링크 버튼들을 세로로 쌓아 보여주는 목록입니다. (PRD F8 (4))
 // 링크가 하나도 없으면 shadcn/ui 의 Empty 로 안내 문구를 보여줍니다.
-// editableHandle 을 주면(내 페이지) 링크 카드마다 [수정]·[삭제] 버튼이 항상 보입니다.
+// editableHandle 을 주면(내 페이지) 링크 카드마다 [수정]·[삭제] 버튼과 마지막 수정 시각이 항상 보입니다.
 // - 수정: 카드 자리에 인라인 수정 폼이 펼쳐집니다 (EditLinkForm · 시나리오 B-3)
 // - 삭제: 확인 모달에서 한 번 더 눌러야 지워집니다 (DeleteLinkDialog · 시나리오 B-4)
 // loading 을 주면(Firestore 에서 불러오는 중) 위에 "불러오는 중" 줄을 띄우고 목록을 흐리게 잠급니다.
@@ -16,6 +16,11 @@ import DeleteLinkDialog from "@/components/link/DeleteLinkDialog"; // 삭제 확
 import EditLinkForm from "@/components/link/EditLinkForm"; // 인라인 수정 폼
 import LinkButton from "@/components/link/LinkButton";
 import type { Link } from "@/lib/types";
+
+// 수정 시각을 "2026. 10. 28. 오전 11:47" 처럼 한국어 날짜·시각으로 바꾼다
+function formatUpdatedAt(ms: number): string {
+  return new Date(ms).toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
+}
 
 type LinkListProps = {
   links: Link[]; // 보여줄 링크들. 배열 순서 = 화면 순서
@@ -98,8 +103,15 @@ function LinkListBody({
             // 링크 버튼 오른쪽에 [수정]·[삭제] 버튼을 위아래로 항상 보이게 둔다
             <li key={link.id} className="flex items-stretch gap-2">
               {/* min-w-0: 긴 제목이 버튼 칸을 밀어내지 않게 */}
-              <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <LinkButton link={link} />
+                {/* 마지막 수정 시각 (내 페이지에서만 보임). 시각이 없는 옛 링크는 표시하지 않는다 */}
+                {link.updatedAt && (
+                  <p className="text-right text-xs text-foreground">
+                    {/* dateTime: 기계가 읽는 표준 형식, 안쪽 글자: 사람이 읽는 한국어 형식 */}
+                    마지막 수정 <time dateTime={new Date(link.updatedAt).toISOString()}>{formatUpdatedAt(link.updatedAt)}</time>
+                  </p>
+                )}
               </div>
               <div className="flex shrink-0 flex-col justify-center gap-1">
                 <Button

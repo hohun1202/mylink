@@ -6,6 +6,9 @@ export type Link = {
   id: string; // 링크마다 붙는 고유 번호 (React가 목록을 구분할 때 사용)
   title: string; // 버튼에 보이는 글자
   url: string; // 버튼을 누르면 이동할 주소
+  // 마지막으로 고친 시각 (1970-01-01 부터 지난 밀리초). Firestore 의 updatedAt 에서 가져옴
+  // 샘플 데이터처럼 Firestore 를 거치지 않은 링크에는 없을 수 있다
+  updatedAt?: number;
 };
 
 // 프로필 페이지 하나(= 사용자 한 명)의 모양

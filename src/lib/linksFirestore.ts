@@ -30,6 +30,9 @@ export async function fetchLinks(): Promise<Link[]> {
     id: doc.id,
     title: doc.data().title,
     url: doc.data().url,
+    // Firestore 의 시각(Timestamp)은 LocalStorage 에 그대로 저장할 수 없어 밀리초 숫자로 바꾼다
+    // 옛 문서처럼 updatedAt 이 없으면 undefined
+    updatedAt: doc.data().updatedAt?.toMillis(),
   }));
 }
 
