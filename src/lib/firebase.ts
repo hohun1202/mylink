@@ -1,8 +1,9 @@
 // Firebase 연결 설정 파일입니다.
-// 앱 어디서든 `import { db } from "@/lib/firebase"` 로 Firestore 를 꺼내 쓰면 됩니다.
+// 앱 어디서든 `import { db, auth } from "@/lib/firebase"` 로 Firestore·로그인(Auth)을 꺼내 쓰면 됩니다.
 // 설정값은 코드에 직접 쓰지 않고 .env.local 의 환경 변수에서 읽어 옵니다.
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
 
 // Firebase 콘솔에서 복사한 firebaseConfig 와 같은 내용입니다.
@@ -24,6 +25,13 @@ export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 // Firestore 데이터베이스 연결 — 링크 저장·불러오기에 이걸 씁니다.
 export const db = getFirestore(app);
+
+// Firebase Auth(로그인) 연결 — 구글 로그인·로그아웃·로그인 상태 감지에 이걸 씁니다.
+// 로그인 상태는 Firebase 가 브라우저(IndexedDB)에 저장해 두므로, 새로고침해도 로그인이 유지됩니다.
+export const auth = getAuth(app);
+
+// 구글 로그인 제공자 — "Google로 로그인" 팝업을 띄울 때 signInWithPopup(auth, googleProvider) 로 씁니다.
+export const googleProvider = new GoogleAuthProvider();
 
 // Analytics(방문 통계)는 브라우저에서만 동작합니다.
 // 서버에서 그냥 getAnalytics() 를 부르면 오류가 나므로,

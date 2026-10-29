@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import Header from "@/components/layout/Header";
+import { Toaster } from "@/components/ui/sonner"; // 토스트 알림이 뜨는 자리 // 모든 페이지 위에 붙는 헤더 (로그인/로그아웃)
 
 // 이 사이트는 2001년 웹 느낌을 위해 Arial/Courier만 씁니다(globals.css).
 // 따라서 웹폰트를 따로 내려받지 않습니다 — 방문자 로딩 속도를 위해서입니다.
@@ -28,7 +30,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       translate="no" // 페이지 전체를 자동 번역 대상에서 뺍니다
       className={cn("h-full antialiased", "font-sans")}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Header />
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }

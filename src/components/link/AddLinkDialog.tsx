@@ -23,15 +23,27 @@ import { Input } from "@/components/ui/input";
 import { useLinkForm } from "@/components/link/useLinkForm"; // 입력값·검사·추가 공통 로직
 
 type AddLinkDialogProps = {
-  handle: string; // 링크를 추가할 프로필
+  uid: string; // 링크를 추가할 계정 (로그인한 사용자의 uid)
   label?: string; // 여는 버튼의 글자
   fullWidth?: boolean; // true면 여는 버튼을 가로로 꽉 채운 큰 버튼으로 (공개 페이지용)
+  // 바깥에서 열고 닫을 때 (예: 헤더 프로필 메뉴의 "링크 추가"). 이 값을 주면 여는 버튼은 그리지 않는다
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
-export default function AddLinkDialog({ handle, label = "링크 추가", fullWidth = false }: AddLinkDialogProps) {
-  const [open, setOpen] = useState(false); // 다이얼로그가 열려 있는지
+export default function AddLinkDialog({
+  uid,
+  label = "링크 추가",
+  fullWidth = false,
+  open: controlledOpen,
+  onOpenChange,
+}: AddLinkDialogProps) {
+  const [innerOpen, setInnerOpen] = useState(false); // 다이얼로그가 열려 있는지 (스스로 관리할 때)
+  const controlled = controlledOpen !== undefined; // 바깥에서 열림 상태를 넘겨줬는지
+  const open = controlled ? controlledOpen : innerOpen;
+  const setOpen = controlled ? (next: boolean) => onOpenChange?.(next) : setInnerOpen;
   // 추가에 성공하면 창을 닫는다 (입력 칸 비우기는 훅이 해 줌)
-  const { form, errors, saving, saveError, update, reset, submit } = useLinkForm(handle, () => setOpen(false));
+  const { form, errors, saving, saveError, update, reset, submit } = useLinkForm(uid, () => setOpen(false));
 
   // 창이 열리거나 닫힐 때마다 폼을 비워, 다음에 열었을 때 이전 입력이 남지 않게 한다
   // 저장 중에는 바깥 클릭·Esc 로 닫히지 않게 막는다 (저장이 끝나면 훅이 창을 닫아 줌)
@@ -43,11 +55,13 @@ export default function AddLinkDialog({ handle, label = "링크 추가", fullWid
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      {/* 다이얼로그를 여는 버튼 */}
-      <DialogTrigger render={<Button size={fullWidth ? "lg" : "default"} className={fullWidth ? "h-12 w-full text-base font-bold" : undefined} />}>
-        <Plus aria-hidden />
-        {label}
-      </DialogTrigger>
+      {/* 다이얼로그를 여는 버튼 (바깥에서 열 때는 그리지 않음) */}
+      {!controlled && (
+        <DialogTrigger render={<Button size={fullWidth ? "lg" : "default"} className={fullWidth ? "h-12 w-full text-base font-bold" : undefined} />}>
+          <Plus aria-hidden />
+          {label}
+        </DialogTrigger>
+      )}
 
       <DialogContent>
         {/* noValidate: 브라우저 기본 검사 말풍선 대신 우리 규칙(validateLink)의 문구를 보여준다 */}
