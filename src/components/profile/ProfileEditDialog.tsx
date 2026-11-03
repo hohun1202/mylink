@@ -1,12 +1,12 @@
 "use client"; // 입력값·열림 상태·중복 확인 결과를 다루므로 클라이언트 컴포넌트
 
 // 마이페이지의 [프로필 수정] 버튼 + 수정 다이얼로그입니다.
-// 표시 이름(displayName)과 한 줄 소개(bio)를 한 번에 고칩니다.
+// Username(아이디) · 이름 · 소개글을 한 번에 고칩니다. 저장 위치는 users/{uid}/profile/main (+ users/{uid} 동기화)
 //
-// 표시 이름은 내 공개 페이지 주소(/{displayName})이기도 해서, 입력하는 동안 아래 순서로 검사합니다.
+// Username 은 내 공개 페이지 주소(/{username})이기도 해서, 입력하는 동안 아래 순서로 검사합니다.
 //   1) 형식 검사 (글자 수·허용 글자·예약어) — 바로
 //   2) 중복 확인 (Firestore 에서 같은 이름을 쓰는 다른 사람이 있는지) — 타자를 멈추고 0.4초 뒤
-// 저장을 누르면 updateProfile 이 중복을 한 번 더 확인한 뒤 users/{uid} 문서를 바꿉니다.
+// 저장을 누르면 updateProfile 이 중복을 한 번 더 확인한 뒤 두 문서를 한꺼번에 바꿉니다.
 
 import { useEffect, useState, type FormEvent } from "react";
 import { Check, CircleAlert, LoaderCircle, Pencil } from "lucide-react";
@@ -31,13 +31,15 @@ import {
   DisplayNameTakenError,
   isBioEmpty,
   isDisplayNameTaken,
+  NAME_MAX_LENGTH,
   updateProfile,
   validateDisplayName,
 } from "@/lib/usersFirestore";
 
 type ProfileEditDialogProps = {
   uid: string; // 고칠 계정 (로그인한 사용자의 uid)
-  displayName: string; // 지금 저장된 표시 이름
+  displayName: string; // 지금 저장된 Username (= 공개 페이지 주소)
+  name: string; // 지금 저장된 이름(실명)
   bio: string; // 지금 저장된 한 줄 소개
 };
 
@@ -47,9 +49,10 @@ type NameCheck = "idle" | "checking" | "available" | "taken" | "error";
 // 타자를 멈춘 뒤 몇 밀리초 기다렸다가 중복 확인할지 (한 글자마다 Firestore 를 부르지 않도록)
 const CHECK_DELAY_MS = 400;
 
-export default function ProfileEditDialog({ uid, displayName, bio }: ProfileEditDialogProps) {
+export default function ProfileEditDialog({ uid, displayName, name: savedName, bio }: ProfileEditDialogProps) {
   const [open, setOpen] = useState(false); // 다이얼로그가 열려 있는지
-  const [name, setName] = useState(""); // 입력 중인 표시 이름
+  const [name, setName] = useState(""); // 입력 중인 Username
+  const [realName, setRealName] = useState(""); // 입력 중인 이름(실명)
   const [bioValue, setBioValue] = useState(""); // 입력 중인 소개
   const [check, setCheck] = useState<{ name: string; result: NameCheck }>({ name: "", result: "idle" }); // 어느 이름을 확인한 결과인지 같이 기억
   const [saving, setSaving] = useState(false); // Firestore 에 저장하는 중인지
@@ -86,31 +89,33 @@ export default function ProfileEditDialog({ uid, displayName, bio }: ProfileEdit
     if (!next && saving) return;
     if (next) {
       setName(displayName);
+      setRealName(savedName);
       setBioValue(isBioEmpty(bio) ? "" : bio);
       setCheck({ name: "", result: "idle" });
     }
     setOpen(next);
   }
 
-  // 저장 버튼을 누를 수 있는지: 이름이 형식에 맞고, 바꿨다면 "사용 가능"으로 확인이 끝났어야 한다
-  const canSave = !saving && !formatError && (!nameChanged || nameCheck === "available");
+  const trimmedRealName = realName.trim();
+  const realNameError = trimmedRealName ? null : "이름을 입력해주세요."; // 이름은 필수 (PRD F4)
+
+  // 저장 버튼을 누를 수 있는지: Username 이 형식에 맞고, 바꿨다면 "사용 가능"으로 확인이 끝났어야 한다. 이름도 비어 있으면 안 됨
+  const canSave = !saving && !formatError && !realNameError && (!nameChanged || nameCheck === "available");
 
   // [저장]
   async function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); // 페이지 새로고침 막기
     if (!canSave) return;
     const nextBio = bioValue.trim() || DEFAULT_BIO; // 비워서 저장하면 기본 문구로 되돌림
-    // 바뀐 것만 담는다
-    const changes: { displayName?: string; bio?: string } = {};
-    if (nameChanged) changes.displayName = trimmedName;
-    if (nextBio !== bio) changes.bio = nextBio;
-    if (Object.keys(changes).length === 0) {
+    // 바뀐 게 하나도 없으면 저장하지 않고 닫기
+    if (!nameChanged && trimmedRealName === savedName && nextBio === bio) {
       setOpen(false); // 바뀐 게 없으면 저장하지 않고 닫기
       return;
     }
     setSaving(true);
     try {
-      await updateProfile(uid, changes); // 이름이 바뀌었으면 여기서 중복을 한 번 더 확인
+      // Username 이 바뀌었으면 여기서 중복을 한 번 더 확인한 뒤 users/{uid}/profile/main 과 users/{uid} 를 한꺼번에 저장
+      await updateProfile(uid, displayName, { username: trimmedName, name: trimmedRealName, bio: nextBio });
       toast.success("프로필을 저장했어요");
       setOpen(false);
     } catch (err) {
@@ -144,13 +149,13 @@ export default function ProfileEditDialog({ uid, displayName, bio }: ProfileEdit
         <form onSubmit={save} noValidate className="grid gap-4">
           <DialogHeader>
             <DialogTitle>프로필 수정</DialogTitle>
-            <DialogDescription>표시 이름은 내 공개 페이지 주소로도 쓰여요.</DialogDescription>
+            <DialogDescription>Username 은 내 공개 페이지 주소로도 쓰여요.</DialogDescription>
           </DialogHeader>
 
           <FieldGroup>
-            {/* 표시 이름 */}
+            {/* Username (아이디 = 공개 페이지 주소) */}
             <Field data-invalid={!!nameError}>
-              <FieldLabel htmlFor="profile-name">표시 이름</FieldLabel>
+              <FieldLabel htmlFor="profile-name">Username</FieldLabel>
               <Input
                 id="profile-name"
                 autoFocus // 창이 열리면 바로 입력할 수 있게
@@ -182,9 +187,31 @@ export default function ProfileEditDialog({ uid, displayName, bio }: ProfileEdit
               )}
             </Field>
 
-            {/* 한 줄 소개 */}
+            {/* 이름 (실명) */}
+            <Field data-invalid={!!realNameError}>
+              <FieldLabel htmlFor="profile-real-name">이름</FieldLabel>
+              <Input
+                id="profile-real-name"
+                autoComplete="name"
+                maxLength={NAME_MAX_LENGTH} // 30자까지만 입력됨
+                placeholder="예: 장호현"
+                value={realName}
+                onChange={(e) => setRealName(e.target.value)}
+                aria-invalid={!!realNameError}
+                disabled={saving}
+              />
+              {realNameError ? (
+                <FieldError>{realNameError}</FieldError>
+              ) : (
+                <FieldDescription>
+                  {realName.length}/{NAME_MAX_LENGTH}
+                </FieldDescription>
+              )}
+            </Field>
+
+            {/* 소개글 */}
             <Field>
-              <FieldLabel htmlFor="profile-bio">한 줄 소개</FieldLabel>
+              <FieldLabel htmlFor="profile-bio">소개글</FieldLabel>
               <Input
                 id="profile-bio"
                 maxLength={BIO_MAX_LENGTH} // 60자까지만 입력됨

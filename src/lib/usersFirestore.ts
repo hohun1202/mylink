@@ -3,14 +3,39 @@
 //
 //   users/
 //   └── {uid}            ← 이 파일: uid · displayName · username · email · photoURL · bio
+//       ├── profile/
+//       │   └── main     ← 이 파일: 마이페이지 [프로필 수정]으로 저장한 프로필 (username · name · bio · updatedAt)
 //       └── links/       ← linksFirestore.ts: 링크 문서들
+//
+// ⚠️ 필드 이름이 두 문서에서 다르게 쓰인다 (users/{uid} 는 예전부터 쓰던 이름이라 그대로 둠)
+//   뜻                         users/{uid}     users/{uid}/profile/main
+//   아이디 = 공개 주소(겹치면 안 됨)  displayName     username
+//   이름(실명)                   username        name
+//   한 줄 소개                   bio             bio
 
-import { collection, deleteField, doc, getDoc, getDocs, limit, onSnapshot, query, setDoc, updateDoc, where, type Unsubscribe } from "firebase/firestore";
+import {
+  collection,
+  deleteField,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  setDoc,
+  where,
+  writeBatch,
+  type Unsubscribe,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { AuthUser } from "@/store/useAuthStore";
 
 // 처음 만들 때 넣는 한 줄 소개 (사용자가 아직 소개를 안 쓴 상태)
 export const DEFAULT_BIO = "한 줄 소개를 입력해주세요.";
+
+// 이름(실명) 최대 글자 수 (PRD F4 기본안)
+export const NAME_MAX_LENGTH = 30;
 
 // 한 줄 소개 최대 글자 수
 export const BIO_MAX_LENGTH = 60;
@@ -155,17 +180,34 @@ export class DisplayNameTakenError extends Error {
   }
 }
 
-// 마이페이지 [프로필 수정]에서 저장했을 때: users/{uid} 문서의 displayName·bio 를 한 번에 바꾼다
-// - 이름이 바뀌었으면 저장 직전에 중복을 한 번 더 확인한다 (입력 중에 확인한 뒤 그 사이 누가 먼저 가져갔을 수 있으므로)
-// - 바꾸면 onSnapshot 으로 지켜보는 화면(마이페이지·헤더 프로필 메뉴)이 저절로 새 값으로 다시 그려진다
-export async function updateProfile(
-  uid: string,
-  changes: { displayName?: string; bio?: string },
-): Promise<void> {
-  if (changes.displayName !== undefined) {
-    const formatError = validateDisplayName(changes.displayName);
+// 프로필 문서 위치: users/{uid}/profile/main
+// (Firestore 경로는 컬렉션/문서/컬렉션/문서 … 순서라, profile 하위 컬렉션 안에 main 이라는 문서 하나를 둔다)
+function profileDoc(uid: string) {
+  return doc(db, "users", uid, "profile", "main");
+}
+
+// [프로필 수정] 폼에서 저장할 값
+export type ProfileUpdate = {
+  username: string; // 아이디 = 공개 페이지 주소 (users/{uid} 의 displayName)
+  name: string; // 이름(실명) (users/{uid} 의 username)
+  bio: string; // 한 줄 소개
+};
+
+// 마이페이지 [프로필 수정]에서 저장했을 때
+// 1) 아이디가 바뀌었으면 저장 직전에 중복을 한 번 더 확인한다 (입력 중에 확인한 뒤 그 사이 누가 먼저 가져갔을 수 있으므로)
+// 2) writeBatch 로 두 문서를 "한 번에" 쓴다 — 둘 다 성공하거나 둘 다 실패한다 (한쪽만 바뀌는 일이 없음)
+//    - users/{uid}/profile/main : 프로필 수정 내용 저장 (요구사항의 저장 위치)
+//    - users/{uid}              : 공개 페이지 찾기·중복 확인·헤더 메뉴가 읽는 문서도 같은 값으로 맞춘다
+// 바꾸면 onSnapshot 으로 users/{uid} 를 지켜보는 화면(마이페이지·헤더 프로필 메뉴)이 저절로 새 값으로 다시 그려진다
+export async function updateProfile(uid: string, currentUsername: string, next: ProfileUpdate): Promise<void> {
+  if (next.username !== currentUsername) {
+    const formatError = validateDisplayName(next.username);
     if (formatError) throw new Error(formatError);
-    if (await isDisplayNameTaken(changes.displayName, uid)) throw new DisplayNameTakenError();
+    if (await isDisplayNameTaken(next.username, uid)) throw new DisplayNameTakenError();
   }
-  await updateDoc(userDoc(uid), changes);
+  const batch = writeBatch(db); // 여러 쓰기를 모아 두는 바구니
+  // merge: true → 문서가 없으면 새로 만들고, 있으면 적은 필드만 바꾼다
+  batch.set(profileDoc(uid), { ...next, updatedAt: serverTimestamp() }, { merge: true });
+  batch.update(userDoc(uid), { displayName: next.username, username: next.name, bio: next.bio });
+  await batch.commit(); // 바구니에 담은 쓰기를 한꺼번에 실행
 }

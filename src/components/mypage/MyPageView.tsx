@@ -51,6 +51,10 @@ export function MyPageContent({ user }: { user: AuthUser }) {
             avatarId="default"
             avatarSrc={profile?.photoURL ?? user.photoURL ?? undefined}
           />
+          {/* 이름(실명) */}
+          {(profile?.username ?? user.username) && (
+            <p className="text-sm font-bold text-foreground">{profile?.username ?? user.username}</p>
+          )}
           {/* 한 줄 소개: 아직 안 썼으면 기본 문구를 흐리게(안내처럼) 보여준다 */}
           <p
             className={
@@ -62,7 +66,12 @@ export function MyPageContent({ user }: { user: AuthUser }) {
             {isBioEmpty(profile?.bio) ? DEFAULT_BIO : profile?.bio}
           </p>
           {/* [프로필 수정]: 표시 이름(= 공개 페이지 주소)과 한 줄 소개를 고친다 */}
-          <ProfileEditDialog uid={user.uid} displayName={profile?.displayName || user.name} bio={profile?.bio ?? ""} />
+          <ProfileEditDialog
+            uid={user.uid}
+            displayName={profile?.displayName || user.name} // Username (= 공개 페이지 주소)
+            name={profile?.username ?? user.username ?? ""} // 이름(실명). users/{uid} 에서는 username 필드
+            bio={profile?.bio ?? ""}
+          />
           {/* 내 데이터가 어디에 저장되는지 (로그인 계정마다 uid 가 달라 데이터가 나뉜다는 것을 확인용으로 보여줌) */}
           <p className="max-w-full font-mono text-xs break-all text-foreground">저장 위치: users/{user.uid}/links</p>
         </div>
