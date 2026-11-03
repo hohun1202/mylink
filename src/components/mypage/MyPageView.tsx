@@ -72,8 +72,6 @@ export function MyPageContent({ user }: { user: AuthUser }) {
             name={profile?.username ?? user.username ?? ""} // 이름(실명). users/{uid} 에서는 username 필드
             bio={profile?.bio ?? ""}
           />
-          {/* 내 데이터가 어디에 저장되는지 (로그인 계정마다 uid 가 달라 데이터가 나뉜다는 것을 확인용으로 보여줌) */}
-          <p className="max-w-full font-mono text-xs break-all text-foreground">저장 위치: users/{user.uid}/links</p>
         </div>
       )}
 
