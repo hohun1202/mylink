@@ -8,11 +8,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import AddLinkForm from "@/components/link/AddLinkForm";
 import LinkList from "@/components/link/LinkList";
-import BioEditor from "@/components/profile/BioEditor"; // 한 줄 소개 + [수정]
+import ProfileEditDialog from "@/components/profile/ProfileEditDialog"; // [프로필 수정] → 표시 이름·한 줄 소개 수정 (이름 중복 확인 포함)
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import RequireLogin from "@/components/auth/RequireLogin"; // 로그아웃 상태면 로그인 안내를 대신 보여줌
 import { useUser } from "@/hooks/useUser";
+import { DEFAULT_BIO, isBioEmpty } from "@/lib/usersFirestore";
 import type { AuthUser } from "@/store/useAuthStore";
 import { useMyLinks, useProfileStore } from "@/store/useProfileStore";
 
@@ -46,11 +47,22 @@ export function MyPageContent({ user }: { user: AuthUser }) {
           <ProfileHeader
             nameAs="h2"
             name={profile?.displayName || user.name} // displayName = 이메일 앞부분
-            bio="" // 소개는 아래 BioEditor 가 [수정] 버튼과 함께 그린다
+            bio="" // 소개는 아래에서 따로 그린다 (아직 안 썼으면 기본 문구를 흐리게)
             avatarId="default"
             avatarSrc={profile?.photoURL ?? user.photoURL ?? undefined}
           />
-          <BioEditor uid={user.uid} bio={profile?.bio ?? ""} />
+          {/* 한 줄 소개: 아직 안 썼으면 기본 문구를 흐리게(안내처럼) 보여준다 */}
+          <p
+            className={
+              isBioEmpty(profile?.bio)
+                ? "text-sm break-words text-foreground/70 italic"
+                : "text-sm font-bold break-words text-foreground"
+            }
+          >
+            {isBioEmpty(profile?.bio) ? DEFAULT_BIO : profile?.bio}
+          </p>
+          {/* [프로필 수정]: 표시 이름(= 공개 페이지 주소)과 한 줄 소개를 고친다 */}
+          <ProfileEditDialog uid={user.uid} displayName={profile?.displayName || user.name} bio={profile?.bio ?? ""} />
           {/* 내 데이터가 어디에 저장되는지 (로그인 계정마다 uid 가 달라 데이터가 나뉜다는 것을 확인용으로 보여줌) */}
           <p className="max-w-full font-mono text-xs break-all text-foreground">저장 위치: users/{user.uid}/links</p>
         </div>

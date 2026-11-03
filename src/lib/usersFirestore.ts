@@ -113,8 +113,59 @@ export function subscribeUserProfile(
   );
 }
 
-// 마이페이지에서 한 줄 소개를 고쳤을 때: users/{uid} 문서의 bio 필드만 바꾼다
-// 바꾸면 onSnapshot 으로 지켜보는 화면(마이페이지·프로필 메뉴)이 저절로 새 소개로 다시 그려진다
-export async function updateBio(uid: string, bio: string): Promise<void> {
-  await updateDoc(userDoc(uid), { bio });
+// ───────── 표시 이름(displayName) 규칙 ─────────
+// displayName 은 화면에 보이는 이름이면서 동시에 내 공개 페이지 주소(/{displayName})다.
+// 그래서 (1) 주소에 쓸 수 있는 글자만, (2) 앱의 다른 주소와 겹치지 않게, (3) 다른 사람과 겹치지 않게 해야 한다.
+
+// 글자 수 범위 (PRD F3 핸들 규칙 기본안)
+export const DISPLAY_NAME_MIN_LENGTH = 3;
+export const DISPLAY_NAME_MAX_LENGTH = 20;
+
+// 허용 글자: 영문 소문자·숫자·밑줄(_). 첫 글자는 영문 소문자나 숫자 (밑줄로 시작하면 Next.js 내부 주소 /_next 와 헷갈림)
+// ^ = 처음, $ = 끝, [a-z0-9] = 소문자나 숫자 한 글자, [a-z0-9_]* = 소문자·숫자·밑줄이 0개 이상
+const DISPLAY_NAME_PATTERN = /^[a-z0-9][a-z0-9_]*$/;
+
+// 예약어: 앱에 이미 있는 주소(/mypage, /dashboard …)나 앞으로 쓸 주소와 겹치는 이름은 못 쓴다
+// 예) 누가 이름을 "mypage" 로 바꾸면 /mypage 가 마이페이지인지 그 사람 공개 페이지인지 알 수 없게 된다
+const RESERVED_DISPLAY_NAMES = new Set(["mypage", "dashboard", "login", "logout", "onboarding", "settings", "api", "admin"]);
+
+// 형식 검사: 문제가 있으면 화면에 보여줄 문구를, 괜찮으면 null 을 돌려준다 (Firestore 는 보지 않는 빠른 검사)
+export function validateDisplayName(name: string): string | null {
+  if (!name) return "이름을 입력해주세요.";
+  if (name.length < DISPLAY_NAME_MIN_LENGTH || name.length > DISPLAY_NAME_MAX_LENGTH)
+    return `${DISPLAY_NAME_MIN_LENGTH}~${DISPLAY_NAME_MAX_LENGTH}자로 입력해주세요.`;
+  if (!DISPLAY_NAME_PATTERN.test(name)) return "영문 소문자, 숫자, 밑줄(_)만 쓸 수 있고, 첫 글자는 영문이나 숫자여야 해요.";
+  if (RESERVED_DISPLAY_NAMES.has(name)) return "이미 앱에서 쓰는 주소라 사용할 수 없어요.";
+  return null;
+}
+
+// 중복 확인: 나(myUid)가 아닌 다른 사용자가 이 displayName 을 쓰고 있으면 true
+// users 컬렉션에서 displayName == name 인 문서를 찾는다 (공개 페이지 찾기와 같은 방식의 검색)
+// limit(2): 혹시 내 문서와 다른 사람 문서가 둘 다 있으면 1개만 가져올 때 내 것만 보고 "안 겹침"으로 착각할 수 있어서
+export async function isDisplayNameTaken(name: string, myUid: string): Promise<boolean> {
+  const snapshot = await getDocs(query(collection(db, "users"), where("displayName", "==", name), limit(2)));
+  return snapshot.docs.some((d) => d.id !== myUid);
+}
+
+// 저장할 때 이름이 이미 쓰이고 있으면 던지는 오류 (화면에서 이걸 보고 "이미 사용 중" 문구를 띄운다)
+export class DisplayNameTakenError extends Error {
+  constructor() {
+    super("이미 사용 중인 이름이에요.");
+    this.name = "DisplayNameTakenError";
+  }
+}
+
+// 마이페이지 [프로필 수정]에서 저장했을 때: users/{uid} 문서의 displayName·bio 를 한 번에 바꾼다
+// - 이름이 바뀌었으면 저장 직전에 중복을 한 번 더 확인한다 (입력 중에 확인한 뒤 그 사이 누가 먼저 가져갔을 수 있으므로)
+// - 바꾸면 onSnapshot 으로 지켜보는 화면(마이페이지·헤더 프로필 메뉴)이 저절로 새 값으로 다시 그려진다
+export async function updateProfile(
+  uid: string,
+  changes: { displayName?: string; bio?: string },
+): Promise<void> {
+  if (changes.displayName !== undefined) {
+    const formatError = validateDisplayName(changes.displayName);
+    if (formatError) throw new Error(formatError);
+    if (await isDisplayNameTaken(changes.displayName, uid)) throw new DisplayNameTakenError();
+  }
+  await updateDoc(userDoc(uid), changes);
 }
