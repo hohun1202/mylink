@@ -55,7 +55,8 @@ export default function ProfileView({ handle, initialPage }: ProfileViewProps) {
               avatarId="default"
               avatarSrc={found.profile.photoURL ?? undefined}
             />
-            <LinkList links={found.links} />
+            {/* pageUid: 방문자가 링크를 누르면 users/{이 페이지 주인 uid}/links/... 의 클릭 수가 올라간다 */}
+            <LinkList links={found.links} pageUid={found.uid} />
           </>
         ) : sample ? (
           // 2) 샘플 프로필

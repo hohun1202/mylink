@@ -9,6 +9,9 @@ export type Link = {
   // 마지막으로 고친 시각 (1970-01-01 부터 지난 밀리초). Firestore 의 updatedAt 에서 가져옴
   // 샘플 데이터처럼 Firestore 를 거치지 않은 링크에는 없을 수 있다
   updatedAt?: number;
+  // 이 링크가 눌린 횟수. Firestore 의 clickCount 에서 가져오고, 아직 한 번도 안 눌렸으면(필드 없음) 0
+  // 샘플 데이터처럼 Firestore 를 거치지 않은 링크에는 없을 수 있다
+  clickCount?: number;
 };
 
 // 프로필 페이지 하나(= 사용자 한 명)의 모양

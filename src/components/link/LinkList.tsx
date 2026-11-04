@@ -2,13 +2,14 @@
 
 // 링크 버튼들을 세로로 쌓아 보여주는 목록입니다. (PRD F8 (4))
 // 링크가 하나도 없으면 shadcn/ui 의 Empty 로 안내 문구를 보여줍니다.
-// ownerUid 를 주면(로그인한 내 페이지) 링크 카드마다 [수정]·[삭제] 버튼과 마지막 수정 시각이 항상 보입니다.
+// ownerUid 를 주면(로그인한 내 페이지) 링크 카드마다 [수정]·[삭제] 버튼, 클릭 수(아이콘 + 숫자), 마지막 수정 시각이 항상 보입니다.
+// pageUid 를 주면(남이 보는 공개 페이지) 수정·삭제 없이, 링크를 누를 때 클릭 수만 저장합니다.
 // - 수정: 카드 자리에 인라인 수정 폼이 펼쳐집니다 (EditLinkForm · 시나리오 B-3)
 // - 삭제: 확인 모달에서 한 번 더 눌러야 지워집니다 (DeleteLinkDialog · 시나리오 B-4)
 // loading 을 주면(Firestore 에서 불러오는 중) 위에 "불러오는 중" 줄을 띄우고 목록을 흐리게 잠급니다.
 
 import { useState } from "react";
-import { Link as LinkGlyph, LoaderCircle } from "lucide-react";
+import { Link as LinkGlyph, LoaderCircle, MousePointerClick } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton"; // 회색 자리표시 상자
@@ -26,6 +27,9 @@ type LinkListProps = {
   links: Link[]; // 보여줄 링크들. 배열 순서 = 화면 순서
   emptyMessage?: string; // 링크가 없을 때 문구 (화면마다 바꿔 쓸 수 있게)
   ownerUid?: string; // 이 값이 있으면 수정·삭제 버튼을 켠다 (링크 주인 = 로그인한 사용자의 uid)
+  // 링크 주인의 uid (보기 전용 공개 페이지용). 클릭 수 저장 경로 users/{pageUid}/links/... 에 쓴다
+  // ownerUid 가 있으면 그게 곧 주인이므로 따로 안 줘도 된다. 둘 다 없으면(샘플) 클릭 수를 세지 않는다
+  pageUid?: string;
   loading?: boolean; // Firestore 에서 불러오는 중인지
 };
 
@@ -59,7 +63,9 @@ function LinkListBody({
   links,
   emptyMessage = "아직 등록된 링크가 없어요",
   ownerUid,
+  pageUid,
 }: LinkListProps) {
+  const clickUid = ownerUid ?? pageUid; // 클릭 수를 저장할 주인 uid
   const [editingId, setEditingId] = useState<string | null>(null); // 지금 인라인 수정 중인 링크 id (한 번에 하나만)
   const [pending, setPending] = useState<Link | null>(null); // 삭제 확인 창에 띄운 링크 (없으면 창 닫힘)
 
@@ -83,7 +89,7 @@ function LinkListBody({
       <ul className="flex w-full flex-col gap-3">
         {links.map((link) => (
           <li key={link.id}>
-            <LinkButton link={link} />
+            <LinkButton link={link} ownerUid={clickUid} />
           </li>
         ))}
       </ul>
@@ -104,14 +110,24 @@ function LinkListBody({
             <li key={link.id} className="flex items-stretch gap-2">
               {/* min-w-0: 긴 제목이 버튼 칸을 밀어내지 않게 */}
               <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <LinkButton link={link} />
-                {/* 마지막 수정 시각 (내 페이지에서만 보임). 시각이 없는 옛 링크는 표시하지 않는다 */}
-                {link.updatedAt && (
-                  <p className="text-right text-xs text-foreground">
-                    {/* dateTime: 기계가 읽는 표준 형식, 안쪽 글자: 사람이 읽는 한국어 형식 */}
-                    마지막 수정 <time dateTime={new Date(link.updatedAt).toISOString()}>{formatUpdatedAt(link.updatedAt)}</time>
+                <LinkButton link={link} ownerUid={clickUid} />
+                {/* 버튼 아래 정보 줄 (내 페이지에서만 보임): 왼쪽 클릭 수, 오른쪽 마지막 수정 시각
+                    flex-wrap: 좁은 화면에서 한 줄에 안 들어가면 시각이 다음 줄로 내려간다 */}
+                <div className="flex flex-wrap items-center justify-between gap-x-2 text-xs">
+                  {/* 클릭 수: 글자 없이 커서 아이콘 + 숫자만. 작은 회색. clickCount 가 없으면(한 번도 안 눌림) 0 */}
+                  <p className="flex items-center gap-1 text-zinc-700">
+                    <MousePointerClick aria-hidden className="size-3.5" /> {/* 눈에 보이는 아이콘 (낭독기는 건너뜀) */}
+                    <span className="sr-only">클릭 수</span> {/* 화면엔 안 보이고 낭독기만 "클릭 수 5" 로 읽음 */}
+                    {link.clickCount ?? 0}
                   </p>
-                )}
+                  {/* 마지막 수정 시각. 시각이 없는 옛 링크는 표시하지 않는다 */}
+                  {link.updatedAt && (
+                    <p className="ml-auto text-foreground">
+                      {/* dateTime: 기계가 읽는 표준 형식, 안쪽 글자: 사람이 읽는 한국어 형식 */}
+                      마지막 수정 <time dateTime={new Date(link.updatedAt).toISOString()}>{formatUpdatedAt(link.updatedAt)}</time>
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="flex shrink-0 flex-col justify-center gap-1">
                 {/* 수정 버튼: 파란 바탕 + 흰 글자 + ✏️ */}

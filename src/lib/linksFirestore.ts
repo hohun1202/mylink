@@ -2,7 +2,7 @@
 // 저장 위치: users/{uid}/links — 로그인한 사용자의 uid(구글 계정마다 Firebase 가 붙여 주는 고유 번호)가 경로의 키입니다.
 // 그래서 같은 함수를 써도 로그인한 계정마다 서로 다른 칸에 저장되고, 남의 링크와 섞이지 않습니다.
 
-import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDocs, increment, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { LinkInput } from "@/lib/validateLink"; // 검사를 통과한 링크 입력값 모양
 import type { Link } from "@/lib/types"; // 화면에서 쓰는 링크 모양
@@ -35,6 +35,8 @@ export async function fetchLinks(uid: string): Promise<Link[]> {
     url: doc.data().url,
     // Firestore 의 시각(Timestamp)은 밀리초 숫자로 바꿔 둔다. 옛 문서처럼 updatedAt 이 없으면 undefined
     updatedAt: doc.data().updatedAt?.toMillis(),
+    // 클릭 수. 한 번도 안 눌린 링크(또는 이 기능 전에 만든 링크)는 필드가 없으므로 0 으로 채운다
+    clickCount: doc.data().clickCount ?? 0,
   }));
 }
 
@@ -51,4 +53,15 @@ export async function updateLink(uid: string, id: string, link: LinkInput): Prom
 // 링크 하나를 Firestore 에서 지운다 (같은 경로의 문서를 삭제)
 export async function deleteLink(uid: string, id: string): Promise<void> {
   await deleteDoc(doc(linksCollection(uid), id));
+}
+
+// 링크가 한 번 눌릴 때마다 클릭 수를 1 올린다. (경로 users/{uid}/links/<문서 id> 의 clickCount 필드)
+// increment(1): "지금 값을 읽어서 +1 해 다시 쓰기"를 브라우저가 하지 않고 Firestore 서버에게 맡긴다.
+//   → 두 사람이 동시에 눌러도 서로의 +1 을 덮어쓰지 않고 정확히 2 가 오른다.
+//   → 필드가 아직 없으면 0 에서 시작해 1 이 된다.
+// updatedAt 은 건드리지 않는다 ("마지막 수정"은 주인이 제목·주소를 고친 시각이므로)
+export async function incrementClickCount(uid: string, id: string): Promise<void> {
+  await updateDoc(doc(linksCollection(uid), id), {
+    clickCount: increment(1),
+  });
 }

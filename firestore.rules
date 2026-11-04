@@ -37,6 +37,12 @@ service cloud.firestore {
 
       // 쓰기: 로그인 + 본인 ID 일치 시만
       allow write: if request.auth != null && request.auth.uid == userId;
+
+      // 예외 — 클릭 수 올리기: 공개 페이지 방문자(로그인 안 해도 됨)가 링크를 누르면 clickCount 를 +1 한다
+      //   - 바뀌는 필드가 clickCount 하나뿐이어야 함 (제목·주소 등은 못 건드림)
+      //   - 새 값 = 이전 값 + 1 이어야 함 (한 번에 1씩만. 없던 필드면 0 → 1)
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clickCount'])
+        && request.resource.data.clickCount == resource.data.get('clickCount', 0) + 1;
     }
   }
 }
