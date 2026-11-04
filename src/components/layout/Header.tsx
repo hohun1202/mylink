@@ -46,7 +46,8 @@ export default function Header() {
               <NextLink
                 href={pagePath}
                 aria-current={onMyPage ? "page" : undefined} // 화면 읽기 프로그램에 "지금 이 페이지"라고 알림
-                className={cn(buttonVariants({ variant: onMyPage ? "default" : "outline", size: "sm" }), "shrink-0")}
+                // 항상 primary(인디고 채움) 버튼 모양 — 헤더에서 가장 눈에 띄는 바로가기
+                className={cn(buttonVariants({ variant: "default", size: "sm" }), "shrink-0")}
               >
                 <House aria-hidden />
                 내 페이지
