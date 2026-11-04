@@ -9,7 +9,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import AddLinkForm from "@/components/link/AddLinkForm";
 import LinkList from "@/components/link/LinkList";
-import ProfileEditDialog from "@/components/profile/ProfileEditDialog"; // [프로필 수정] → 표시 이름·한 줄 소개 수정 (이름 중복 확인 포함)
+import ProfileEditDialog from "@/components/profile/ProfileEditDialog"; // [프로필 수정] → 이름·한 줄 소개 수정 (Username 은 바꿀 수 없음)
 import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import RequireLogin from "@/components/auth/RequireLogin"; // 로그아웃 상태면 로그인 안내를 대신 보여줌
@@ -66,10 +66,10 @@ export function MyPageContent({ user }: { user: AuthUser }) {
           >
             {isBioEmpty(profile?.bio) ? DEFAULT_BIO : profile?.bio}
           </p>
-          {/* [프로필 수정]: 표시 이름(= 공개 페이지 주소)과 한 줄 소개를 고친다 */}
+          {/* [프로필 수정]: 이름과 한 줄 소개를 고친다. Username(= 공개 페이지 주소)은 보여주기만 함 */}
           <ProfileEditDialog
             uid={user.uid}
-            displayName={profile?.displayName || user.name} // Username (= 공개 페이지 주소)
+            displayName={profile?.displayName || user.name} // Username (= 공개 페이지 주소). 창에 보여주기만 함
             name={profile?.username ?? user.username ?? ""} // 이름(실명). users/{uid} 에서는 username 필드
             bio={profile?.bio ?? ""}
           />

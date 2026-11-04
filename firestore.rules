@@ -9,7 +9,14 @@ service cloud.firestore {
       allow read: if true;
 
       // 쓰기: 로그인 + 본인 ID 일치 시만
-      allow write: if request.auth != null && request.auth.uid == userId;
+      // displayName(= 공개 페이지 주소)은 다른 사람과 겹치면 안 되므로 내 마음대로 정하거나 바꿀 수 없다
+      //   - 처음 만들 때: 내 구글 이메일의 @ 앞부분이어야 함 (앱이 자동으로 넣는 값)
+      //   - 고칠 때: displayName 은 그대로여야 함 (이름·소개 등 다른 필드만 수정 가능)
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.displayName == request.auth.token.email.split('@')[0];
+      allow update: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.displayName == resource.data.displayName;
+      allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
     // ===== 프로필 수정 저장본 (users/{userId}/profile/main) =====

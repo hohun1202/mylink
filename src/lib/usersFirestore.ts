@@ -126,47 +126,11 @@ export async function fetchUserProfile(uid: string): Promise<UserProfile | null>
   return data ? toProfile(data) : null;
 }
 
-// ───────── 표시 이름(displayName) 규칙 ─────────
+// ───────── 표시 이름(displayName) ─────────
 // displayName 은 화면에 보이는 이름이면서 동시에 내 공개 페이지 주소(/{displayName})다.
-// 그래서 (1) 주소에 쓸 수 있는 글자만, (2) 앱의 다른 주소와 겹치지 않게, (3) 다른 사람과 겹치지 않게 해야 한다.
-
-// 글자 수 범위 (PRD F3 핸들 규칙 기본안)
-export const DISPLAY_NAME_MIN_LENGTH = 3;
-export const DISPLAY_NAME_MAX_LENGTH = 20;
-
-// 허용 글자: 영문 소문자·숫자·밑줄(_). 첫 글자는 영문 소문자나 숫자 (밑줄로 시작하면 Next.js 내부 주소 /_next 와 헷갈림)
-// ^ = 처음, $ = 끝, [a-z0-9] = 소문자나 숫자 한 글자, [a-z0-9_]* = 소문자·숫자·밑줄이 0개 이상
-const DISPLAY_NAME_PATTERN = /^[a-z0-9][a-z0-9_]*$/;
-
-// 예약어: 앱에 이미 있는 주소(/mypage, /dashboard …)나 앞으로 쓸 주소와 겹치는 이름은 못 쓴다
-// 예) 누가 이름을 "mypage" 로 바꾸면 /mypage 가 마이페이지인지 그 사람 공개 페이지인지 알 수 없게 된다
-const RESERVED_DISPLAY_NAMES = new Set(["mypage", "dashboard", "login", "logout", "onboarding", "settings", "api", "admin"]);
-
-// 형식 검사: 문제가 있으면 화면에 보여줄 문구를, 괜찮으면 null 을 돌려준다 (Firestore 는 보지 않는 빠른 검사)
-export function validateDisplayName(name: string): string | null {
-  if (!name) return "이름을 입력해주세요.";
-  if (name.length < DISPLAY_NAME_MIN_LENGTH || name.length > DISPLAY_NAME_MAX_LENGTH)
-    return `${DISPLAY_NAME_MIN_LENGTH}~${DISPLAY_NAME_MAX_LENGTH}자로 입력해주세요.`;
-  if (!DISPLAY_NAME_PATTERN.test(name)) return "영문 소문자, 숫자, 밑줄(_)만 쓸 수 있고, 첫 글자는 영문이나 숫자여야 해요.";
-  if (RESERVED_DISPLAY_NAMES.has(name)) return "이미 앱에서 쓰는 주소라 사용할 수 없어요.";
-  return null;
-}
-
-// 중복 확인: 나(myUid)가 아닌 다른 사용자가 이 displayName 을 쓰고 있으면 true
-// users 컬렉션에서 displayName == name 인 문서를 찾는다 (공개 페이지 찾기와 같은 방식의 검색)
-// limit(2): 혹시 내 문서와 다른 사람 문서가 둘 다 있으면 1개만 가져올 때 내 것만 보고 "안 겹침"으로 착각할 수 있어서
-export async function isDisplayNameTaken(name: string, myUid: string): Promise<boolean> {
-  const snapshot = await getDocs(query(collection(db, "users"), where("displayName", "==", name), limit(2)));
-  return snapshot.docs.some((d) => d.id !== myUid);
-}
-
-// 저장할 때 이름이 이미 쓰이고 있으면 던지는 오류 (화면에서 이걸 보고 "이미 사용 중" 문구를 띄운다)
-export class DisplayNameTakenError extends Error {
-  constructor() {
-    super("이미 사용 중인 이름이에요.");
-    this.name = "DisplayNameTakenError";
-  }
-}
+// 처음 로그인할 때 이메일 앞부분으로 정해지고, 그 뒤로는 바꿀 수 없다.
+// (바꿀 수 있게 하면 다른 사람과 겹치지 않게 막아야 하는데, 브라우저 쪽 확인만으로는 확실히 막을 수 없어서 기능을 뺐다.
+//  보안 규칙 firestore.rules 에서도 displayName 변경을 거절한다)
 
 // 프로필 문서 위치: users/{uid}/profile/main
 // (Firestore 경로는 컬렉션/문서/컬렉션/문서 … 순서라, profile 하위 컬렉션 안에 main 이라는 문서 하나를 둔다)
@@ -174,27 +138,20 @@ function profileDoc(uid: string) {
   return doc(db, "users", uid, "profile", "main");
 }
 
-// [프로필 수정] 폼에서 저장할 값
+// [프로필 수정] 폼에서 저장할 값 (Username 은 바꿀 수 없으므로 없음)
 export type ProfileUpdate = {
-  username: string; // 아이디 = 공개 페이지 주소 (users/{uid} 의 displayName)
   name: string; // 이름(실명) (users/{uid} 의 username)
   bio: string; // 한 줄 소개
 };
 
 // 마이페이지 [프로필 수정]에서 저장했을 때
-// 1) 아이디가 바뀌었으면 저장 직전에 중복을 한 번 더 확인한다 (입력 중에 확인한 뒤 그 사이 누가 먼저 가져갔을 수 있으므로)
-// 2) writeBatch 로 두 문서를 "한 번에" 쓴다 — 둘 다 성공하거나 둘 다 실패한다 (한쪽만 바뀌는 일이 없음)
-//    - users/{uid}/profile/main : 프로필 수정 내용 저장 (요구사항의 저장 위치)
-//    - users/{uid}              : 공개 페이지 찾기·중복 확인·헤더 메뉴가 읽는 문서도 같은 값으로 맞춘다
-export async function updateProfile(uid: string, currentUsername: string, next: ProfileUpdate): Promise<void> {
-  if (next.username !== currentUsername) {
-    const formatError = validateDisplayName(next.username);
-    if (formatError) throw new Error(formatError);
-    if (await isDisplayNameTaken(next.username, uid)) throw new DisplayNameTakenError();
-  }
+// writeBatch 로 두 문서를 "한 번에" 쓴다 — 둘 다 성공하거나 둘 다 실패한다 (한쪽만 바뀌는 일이 없음)
+//   - users/{uid}/profile/main : 프로필 수정 내용 저장 (요구사항의 저장 위치)
+//   - users/{uid}              : 공개 페이지·헤더 메뉴가 읽는 문서도 같은 값으로 맞춘다 (displayName 은 건드리지 않음)
+export async function updateProfile(uid: string, next: ProfileUpdate): Promise<void> {
   const batch = writeBatch(db); // 여러 쓰기를 모아 두는 바구니
   // merge: true → 문서가 없으면 새로 만들고, 있으면 적은 필드만 바꾼다
   batch.set(profileDoc(uid), { ...next, updatedAt: serverTimestamp() }, { merge: true });
-  batch.update(userDoc(uid), { displayName: next.username, username: next.name, bio: next.bio });
+  batch.update(userDoc(uid), { username: next.name, bio: next.bio });
   await batch.commit(); // 바구니에 담은 쓰기를 한꺼번에 실행
 }
