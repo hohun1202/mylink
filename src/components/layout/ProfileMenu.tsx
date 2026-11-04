@@ -4,13 +4,13 @@
 // 사진 + 이름을 누르면 아래 내용이 펼쳐집니다.
 //   ┌ [사진] displayName / username / email
 //   ├ 한 줄 소개 · 내 링크 N개
-//   ├ 마이페이지 · 내 페이지로 이동 · 링크 추가
+//   ├ 마이페이지 · 내 페이지로 이동 · 통계 · 링크 추가
 //   ├ 내 페이지 미리보기 · 내 페이지 링크 복사
 //   └ Google 계정으로 로그인됨 · 로그아웃
 
 import { useState } from "react";
 import { useRouter } from "next/navigation"; // 코드로 페이지 이동
-import { ChevronDown, Copy, ExternalLink, House, LogOut, Plus, User } from "lucide-react";
+import { ChartColumn, ChevronDown, Copy, ExternalLink, House, LogOut, Plus, User } from "lucide-react";
 import { toast } from "sonner"; // 잠깐 떴다 사라지는 알림
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -102,6 +102,11 @@ export default function ProfileMenu({ user }: { user: AuthUser }) {
             <DropdownMenuItem onClick={() => router.push(pagePath)}>
               <House aria-hidden />
               내 페이지로 이동
+            </DropdownMenuItem>
+            {/* 내 링크 클릭 통계 페이지 (/stats) */}
+            <DropdownMenuItem onClick={() => router.push("/stats")}>
+              <ChartColumn aria-hidden />
+              통계
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setAddOpen(true)}>
               <Plus aria-hidden />
