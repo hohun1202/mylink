@@ -54,6 +54,7 @@ function DashboardBody({ uid }: { uid: string }) {
           loading={linksQuery.isFetching} // 처음 가져오거나, 추가·수정·삭제 뒤 다시 가져오는 중이면 로딩 표시
           emptyMessage="아직 링크가 없어요. '링크 추가'를 눌러 보세요"
           ownerUid={uid} // 수정·삭제 버튼
+          showClicks // 클릭 수(아이콘 + 숫자) 표시 — 대시보드에서만 보여준다
         />
       </CardContent>
     </Card>
