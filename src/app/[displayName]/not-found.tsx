@@ -11,8 +11,8 @@ export default function DisplayNameNotFound() {
 
   return (
     // 공개 페이지(ProfileView)와 같은 배경·폭
-    <main className="flex flex-1 justify-center bg-background px-4 py-12 text-base text-foreground">
-      <div className="flex w-full max-w-md flex-col items-center gap-8">
+    <main className="flex flex-1 justify-center bg-background px-4 py-16 text-base text-foreground">
+      <div className="flex w-full max-w-md flex-col items-center justify-center gap-8">
         <ProfileNotFound handle={displayName} />
       </div>
     </main>
