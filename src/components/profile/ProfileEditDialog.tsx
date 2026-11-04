@@ -6,7 +6,10 @@
 // Username 은 내 공개 페이지 주소(/{username})이기도 해서, 입력하는 동안 아래 순서로 검사합니다.
 //   1) 형식 검사 (글자 수·허용 글자·예약어) — 바로
 //   2) 중복 확인 (Firestore 에서 같은 이름을 쓰는 다른 사람이 있는지) — 타자를 멈추고 0.4초 뒤
-// 저장을 누르면 updateProfile 이 중복을 한 번 더 확인한 뒤 두 문서를 한꺼번에 바꿉니다.
+// 중복 확인은 TanStack Query(useDisplayNameTakenQuery)로, 저장은 useUpdateProfileMutation 으로 합니다.
+// ⭐ 저장은 낙관적 업데이트: [저장]을 누르면 창이 바로 닫히고 마이페이지·헤더 메뉴가 새 값으로 먼저 바뀝니다.
+//    그 뒤 실제 저장(중복 재확인 → users/{uid}/profile/main 과 users/{uid} 를 한꺼번에 저장)이 실패하면
+//    화면이 예전 값으로 되돌아가고 오류 알림이 뜹니다.
 
 import { useEffect, useState, type FormEvent } from "react";
 import { Check, CircleAlert, LoaderCircle, Pencil } from "lucide-react";
@@ -24,15 +27,14 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { useDisplayNameTakenQuery, useUpdateProfileMutation } from "@/lib/queries";
 import {
   BIO_MAX_LENGTH,
   DEFAULT_BIO,
   DISPLAY_NAME_MAX_LENGTH,
   DisplayNameTakenError,
   isBioEmpty,
-  isDisplayNameTaken,
   NAME_MAX_LENGTH,
-  updateProfile,
   validateDisplayName,
 } from "@/lib/usersFirestore";
 
@@ -52,46 +54,46 @@ const CHECK_DELAY_MS = 400;
 export default function ProfileEditDialog({ uid, displayName, name: savedName, bio }: ProfileEditDialogProps) {
   const [open, setOpen] = useState(false); // 다이얼로그가 열려 있는지
   const [name, setName] = useState(""); // 입력 중인 Username
+  const [debouncedName, setDebouncedName] = useState(""); // 타자를 멈추고 0.4초 지난 Username (이 값으로 중복 확인)
   const [realName, setRealName] = useState(""); // 입력 중인 이름(실명)
   const [bioValue, setBioValue] = useState(""); // 입력 중인 소개
-  const [check, setCheck] = useState<{ name: string; result: NameCheck }>({ name: "", result: "idle" }); // 어느 이름을 확인한 결과인지 같이 기억
-  const [saving, setSaving] = useState(false); // Firestore 에 저장하는 중인지
+  const updateProfile = useUpdateProfileMutation(uid); // 프로필 저장 (낙관적 업데이트)
+  const saving = updateProfile.isPending; // 저장 중인지 (창은 이미 닫혀 있고, [프로필 수정] 버튼만 잠근다)
 
   const trimmedName = name.trim(); // 앞뒤 공백은 빼고 검사·저장
   const nameChanged = trimmedName !== displayName; // 이름을 바꿨는지 (안 바꿨으면 검사할 필요 없음)
   const formatError = nameChanged ? validateDisplayName(trimmedName) : null; // 형식 오류 문구 (없으면 null)
-  // 지금 입력값에 대한 중복 확인 결과. 입력이 바뀌었는데 아직 확인 전이면 "확인 중"으로 본다
-  const nameCheck: NameCheck = !nameChanged || formatError ? "idle" : check.name === trimmedName ? check.result : "checking";
 
-  // 이름 입력이 바뀔 때마다: 형식이 맞으면 0.4초 기다렸다가 Firestore 에서 중복 확인
+  // 이름 입력이 바뀔 때마다 0.4초 타이머를 다시 건다 → 타자를 멈추면 debouncedName 이 지금 입력값이 된다 (디바운스)
   useEffect(() => {
-    if (!open || !nameChanged || formatError) return; // 검사할 필요 없음
-    let cancelled = false; // 기다리는 사이 또 입력하면 이전 확인 결과는 버린다
-    const timer = setTimeout(() => {
-      isDisplayNameTaken(trimmedName, uid)
-        .then((taken) => {
-          if (!cancelled) setCheck({ name: trimmedName, result: taken ? "taken" : "available" });
-        })
-        .catch((err) => {
-          console.error("이름 중복 확인 실패:", err); // 원인(권한 규칙, 네트워크 등)은 콘솔에서 확인
-          if (!cancelled) setCheck({ name: trimmedName, result: "error" });
-        });
-    }, CHECK_DELAY_MS);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer); // 0.4초가 지나기 전에 또 입력하면 예약해 둔 확인을 취소
-    };
-  }, [open, nameChanged, formatError, trimmedName, uid]);
+    const timer = setTimeout(() => setDebouncedName(trimmedName), CHECK_DELAY_MS);
+    return () => clearTimeout(timer); // 0.4초 전에 또 입력하면 예약해 둔 것을 취소
+  }, [trimmedName]);
+
+  // 중복 확인: 창이 열려 있고, 이름을 바꿨고, 형식이 맞고, 타자를 멈췄을 때만 Firestore 에 묻는다
+  const typingDone = debouncedName === trimmedName;
+  const takenQuery = useDisplayNameTakenQuery(trimmedName, uid, open && nameChanged && !formatError && typingDone);
+  if (takenQuery.isError) console.error("이름 중복 확인 실패:", takenQuery.error); // 원인(권한 규칙, 네트워크 등)은 콘솔에서 확인
+
+  // 지금 입력값에 대한 중복 확인 상태
+  const nameCheck: NameCheck =
+    !nameChanged || formatError
+      ? "idle"
+      : !typingDone || takenQuery.isFetching
+        ? "checking"
+        : takenQuery.isError
+          ? "error"
+          : takenQuery.data
+            ? "taken"
+            : "available";
 
   // 다이얼로그를 열 때: 지금 저장된 값으로 입력 칸을 채운다 (소개가 기본 문구면 빈 칸)
-  // 저장 중에는 바깥 클릭·Esc 로 닫히지 않게 막는다
   function handleOpenChange(next: boolean) {
-    if (!next && saving) return;
     if (next) {
       setName(displayName);
+      setDebouncedName(displayName);
       setRealName(savedName);
       setBioValue(isBioEmpty(bio) ? "" : bio);
-      setCheck({ name: "", result: "idle" });
     }
     setOpen(next);
   }
@@ -103,32 +105,31 @@ export default function ProfileEditDialog({ uid, displayName, name: savedName, b
   const canSave = !saving && !formatError && !realNameError && (!nameChanged || nameCheck === "available");
 
   // [저장]
-  async function save(e: FormEvent<HTMLFormElement>) {
+  function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault(); // 페이지 새로고침 막기
     if (!canSave) return;
     const nextBio = bioValue.trim() || DEFAULT_BIO; // 비워서 저장하면 기본 문구로 되돌림
-    // 바뀐 게 하나도 없으면 저장하지 않고 닫기
-    if (!nameChanged && trimmedRealName === savedName && nextBio === bio) {
-      setOpen(false); // 바뀐 게 없으면 저장하지 않고 닫기
-      return;
-    }
-    setSaving(true);
-    try {
-      // Username 이 바뀌었으면 여기서 중복을 한 번 더 확인한 뒤 users/{uid}/profile/main 과 users/{uid} 를 한꺼번에 저장
-      await updateProfile(uid, displayName, { username: trimmedName, name: trimmedRealName, bio: nextBio });
-      toast.success("프로필을 저장했어요");
-      setOpen(false);
-    } catch (err) {
-      if (err instanceof DisplayNameTakenError) {
-        // 확인한 뒤 저장하기 전 사이에 다른 사람이 먼저 가져간 경우
-        setCheck({ name: trimmedName, result: "taken" });
-      } else {
-        console.error("프로필 저장 실패:", err); // 원인(권한 규칙, 네트워크 등)은 개발자 도구 콘솔에서 확인
-        toast.error("프로필을 저장하지 못했어요"); // 입력값은 그대로 둬서 다시 누를 수 있게
-      }
-    } finally {
-      setSaving(false);
-    }
+    setOpen(false); // 낙관적 업데이트: 결과를 기다리지 않고 창부터 닫는다
+    // 바뀐 게 하나도 없으면 저장하지 않는다
+    if (!nameChanged && trimmedRealName === savedName && nextBio === bio) return;
+
+    // mutate: 저장을 시작만 하고 기다리지 않는다. 화면은 onMutate 에서 이미 새 값으로 바뀐다
+    updateProfile.mutate(
+      { currentUsername: displayName, next: { username: trimmedName, name: trimmedRealName, bio: nextBio } },
+      {
+        onSuccess: () => toast.success("프로필을 저장했어요"),
+        onError: (err) => {
+          // 이 시점에 화면은 이미 예전 값으로 되돌아가 있다 (useUpdateProfileMutation 의 onError)
+          if (err instanceof DisplayNameTakenError) {
+            // 확인한 뒤 저장하기 전 사이에 다른 사람이 먼저 가져간 경우
+            toast.error(`"${trimmedName}" 은(는) 방금 다른 사람이 가져갔어요. 다른 Username 으로 다시 시도해 주세요.`);
+          } else {
+            console.error("프로필 저장 실패:", err); // 원인(권한 규칙, 네트워크 등)은 개발자 도구 콘솔에서 확인
+            toast.error("프로필을 저장하지 못해 원래대로 되돌렸어요");
+          }
+        },
+      },
+    );
   }
 
   // 이름 칸 아래에 보여줄 문구: 오류면 빨간 글씨, 아니면 안내 글씨
@@ -139,7 +140,8 @@ export default function ProfileEditDialog({ uid, displayName, name: savedName, b
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {/* 다이얼로그를 여는 버튼 */}
-      <DialogTrigger render={<Button type="button" variant="outline" size="sm" />}>
+      {/* 저장 중에는 잠근다 (앞의 저장이 끝나기 전에 또 고치면 되돌리기가 꼬일 수 있으므로) */}
+      <DialogTrigger render={<Button type="button" variant="outline" size="sm" disabled={saving} />}>
         <Pencil aria-hidden />
         프로필 수정
       </DialogTrigger>

@@ -2,7 +2,7 @@
 
 // 링크 카드 자리에 그대로 펼쳐지는 인라인 수정 폼입니다. (PRD F5 · 시나리오 B-3)
 // 입력 검사는 추가할 때와 같은 규칙(validateLink)을 씁니다.
-// 저장하면 Firestore(users/{uid}/links/<id>)를 고친 뒤, 목록을 Firestore 에서 다시 불러옵니다(갱신형).
+// 저장하면 Firestore(users/{uid}/links/<id>)를 고친 뒤, 목록을 Firestore 에서 다시 불러옵니다(useUpdateLinkMutation).
 
 import { useState, type FormEvent, type KeyboardEvent } from "react";
 import { Check, LoaderCircle, X } from "lucide-react";
@@ -11,9 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { validateLink, type LinkErrors, type LinkInput } from "@/lib/validateLink"; // 추가와 같은 검사 규칙
-import { updateLink } from "@/lib/linksFirestore"; // Firestore 수정 함수
+import { useUpdateLinkMutation } from "@/lib/queries"; // 수정 + 수정 후 목록 다시 가져오기
 import type { Link } from "@/lib/types";
-import { reloadMyLinks } from "@/store/useProfileStore"; // 저장 후 목록 다시 불러오기
 
 type EditLinkFormProps = {
   link: Link; // 고칠 링크 (처음 입력 칸에 채워 둘 값)
@@ -24,7 +23,8 @@ type EditLinkFormProps = {
 export default function EditLinkForm({ link, uid, onDone }: EditLinkFormProps) {
   const [form, setForm] = useState<LinkInput>({ title: link.title, url: link.url }); // 지금 값으로 시작
   const [errors, setErrors] = useState<LinkErrors>({}); // 칸별 오류 문구
-  const [saving, setSaving] = useState(false); // Firestore 에 저장하는 중인지 (버튼 잠금용)
+  const updateLink = useUpdateLinkMutation(uid);
+  const saving = updateLink.isPending; // 저장하고 목록을 다시 가져오는 중인지 (버튼 잠금용)
   const [saveError, setSaveError] = useState<string | null>(null); // 저장 실패 문구
 
   // 입력 칸 하나가 바뀔 때: 값을 반영하고, 그 칸의 오류 문구는 지운다
@@ -42,19 +42,16 @@ export default function EditLinkForm({ link, uid, onDone }: EditLinkFormProps) {
       setErrors(result.errors); // 잘못됐으면 저장하지 않고 오류만 보여줌
       return;
     }
-    setSaving(true);
     setSaveError(null);
     try {
-      await updateLink(uid, link.id, result.value); // 1. Firestore 문서 고치기
-      await reloadMyLinks(uid); // 2. Firestore 에서 목록을 다시 불러와 화면 갱신
+      // 1. Firestore 문서 고치기 → 2. 끝나면 목록을 다시 가져와 화면 갱신
+      await updateLink.mutateAsync({ id: link.id, link: result.value });
       toast.success("링크를 수정했어요");
       onDone(); // 3. 카드를 원래 모양으로
     } catch (err) {
       console.error("링크 수정 실패:", err); // 원인(권한 규칙, 네트워크 등)은 개발자 도구 콘솔에서 확인
       setSaveError("링크를 수정하지 못했어요. 잠시 후 다시 시도해 주세요."); // 입력값은 그대로 둬서 다시 누를 수 있게
       toast.error("링크를 수정하지 못했어요");
-    } finally {
-      setSaving(false);
     }
   }
 

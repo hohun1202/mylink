@@ -25,11 +25,11 @@ import AddLinkDialog from "@/components/link/AddLinkDialog";
 import { useUser } from "@/hooks/useUser";
 import { isBioEmpty, publicPagePath } from "@/lib/usersFirestore";
 import { signOutUser, type AuthUser } from "@/store/useAuthStore";
-import { useMyLinks, useProfileStore } from "@/store/useProfileStore";
+import { useLinksQuery } from "@/lib/queries"; // 내 링크 가져오기 (TanStack Query)
 
 export default function ProfileMenu({ user }: { user: AuthUser }) {
   const router = useRouter();
-  const { profile } = useUser(); // Firestore users/{uid} 문서 (실시간)
+  const { profile } = useUser(); // Firestore users/{uid} 문서 (프로필 수정 시 낙관적 업데이트로 바로 바뀜)
   const [addOpen, setAddOpen] = useState(false); // "링크 추가" 창이 열려 있는지
 
   // 화면에 쓸 값: Firestore 문서가 있으면 그 값, 아직 없으면 로그인 정보로 대신한다
@@ -146,19 +146,10 @@ function ProfileAvatar({ name, photoURL, size = "sm" }: { name: string; photoURL
   );
 }
 
-// "내 링크 N개" — 이미 불러온 내 링크가 있으면 그 수를 쓰고, 없으면(예: 공개 페이지에서 메뉴를 연 경우) 그때 불러온다
-// 메뉴 내용은 열릴 때만 그려지므로, 메뉴를 열기 전에는 불러오지 않는다
+// "내 링크 N개" — 마이페이지에서 이미 가져온 링크가 캐시에 있으면 그 수를 바로 쓰고, 없으면 그때 가져온다
+// 메뉴 내용은 열릴 때만 그려지므로, 메뉴를 열기 전에는 가져오지 않는다
 function MyLinkCount({ uid }: { uid: string }) {
-  const loaded = useProfileStore((s) => s.myLinksUid === uid);
-  return loaded ? <LinkCountText /> : <LinkCountLoader uid={uid} />;
-}
-
-function LinkCountLoader({ uid }: { uid: string }) {
-  useMyLinks(uid); // Firestore 에서 내 링크 불러오기 → 끝나면 MyLinkCount 가 LinkCountText 로 바뀜
-  return <p className="text-xs text-muted-foreground">링크 수 불러오는 중…</p>;
-}
-
-function LinkCountText() {
-  const count = useProfileStore((s) => s.myLinks.length);
-  return <p className="text-xs font-bold text-muted-foreground">내 링크 {count}개</p>;
+  const linksQuery = useLinksQuery(uid);
+  if (linksQuery.isPending) return <p className="text-xs text-muted-foreground">링크 수 불러오는 중…</p>;
+  return <p className="text-xs font-bold text-muted-foreground">내 링크 {linksQuery.data?.length ?? 0}개</p>;
 }

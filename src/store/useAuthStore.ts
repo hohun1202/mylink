@@ -8,7 +8,8 @@ import { toast } from "sonner"; // 잠깐 떴다 사라지는 알림
 import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { ensureUserProfile } from "@/lib/usersFirestore"; // 처음 로그인한 사용자의 users/{uid} 문서 만들기
-import { useProfileStore } from "@/store/useProfileStore";
+import { getQueryClient } from "@/lib/queryClient"; // TanStack Query 캐시 창고
+import { queryKeys } from "@/lib/queries";
 
 // 화면에 보여줄 로그인 사용자 정보 (Firebase User 에서 필요한 것만 골라 담음)
 export type AuthUser = {
@@ -42,6 +43,7 @@ export function useAuthListener(): void {
     listening = true;
     onAuthStateChanged(auth, (firebaseUser) => {
       const prevUid = useAuthStore.getState().user?.uid;
+      const queryClient = getQueryClient();
       const user: AuthUser | null = firebaseUser
         ? {
             uid: firebaseUser.uid,
@@ -52,12 +54,18 @@ export function useAuthListener(): void {
             username: firebaseUser.displayName,
           }
         : null;
-      // 계정이 바뀌었거나 로그아웃했으면, 화면에 남아 있던 이전 계정의 링크를 지운다 (데이터 분리)
-      if (prevUid !== user?.uid) useProfileStore.getState().clearMyLinks();
+      // 계정이 바뀌었거나 로그아웃했으면, 캐시에 남아 있던 이전 계정의 링크·프로필을 지운다 (데이터 분리)
+      if (prevUid && prevUid !== user?.uid) {
+        queryClient.removeQueries({ queryKey: queryKeys.links(prevUid) });
+        queryClient.removeQueries({ queryKey: queryKeys.profile(prevUid) });
+      }
       useAuthStore.setState({ user, authReady: true });
       // 로그인했으면 Firestore 에 users/{uid} 문서가 있는지 보고, 없으면(첫 로그인) 만들고 옛 모양이면 고친다
+      // 끝나면 프로필을 다시 가져오게 한다 (첫 로그인이면 그 사이 "문서 없음"으로 캐시돼 있을 수 있으므로)
       if (user) {
-        ensureUserProfile(user).catch((err) => console.error("유저 정보 저장 실패:", err));
+        ensureUserProfile(user)
+          .then(() => queryClient.invalidateQueries({ queryKey: queryKeys.profile(user.uid) }))
+          .catch((err) => console.error("유저 정보 저장 실패:", err));
       }
     });
   }, []);

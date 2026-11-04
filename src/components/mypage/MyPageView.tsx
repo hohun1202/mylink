@@ -1,7 +1,8 @@
 "use client"; // 로그인 상태·Firestore 를 읽으므로 클라이언트 컴포넌트
 
 // 마이페이지 화면입니다: 위에서부터 제목 → 내 프로필 → 링크 추가 폼 → 링크 목록.
-// - 프로필: Firestore users/{uid} 문서를 실시간(onSnapshot)으로 읽어 보여준다 (useUser)
+// - 프로필: Firestore users/{uid} 문서를 TanStack Query 로 읽어 보여준다 (useUser · 실시간 아님)
+//   [프로필 수정]으로 저장하면 낙관적 업데이트로 화면이 먼저 바뀐다 (useUpdateProfileMutation)
 // - 링크: Firestore users/{uid}/links 에서 불러오고, 추가·수정·삭제도 같은 경로에 한다
 // 첫 화면(/)은 로그인하면 이 화면(MyPageContent)을, /mypage 는 MyPageView 를 보여준다.
 
@@ -15,7 +16,7 @@ import RequireLogin from "@/components/auth/RequireLogin"; // 로그아웃 상�
 import { useUser } from "@/hooks/useUser";
 import { DEFAULT_BIO, isBioEmpty } from "@/lib/usersFirestore";
 import type { AuthUser } from "@/store/useAuthStore";
-import { useMyLinks, useProfileStore } from "@/store/useProfileStore";
+import { useLinksQuery } from "@/lib/queries"; // 내 링크 가져오기 (TanStack Query)
 
 // /mypage 주소용: 로그인하지 않았으면 로그인 안내 문구를 보여준다
 export default function MyPageView() {
@@ -30,9 +31,9 @@ export default function MyPageView() {
 
 // 로그인한 뒤의 마이페이지 본문 (user 가 반드시 있음)
 export function MyPageContent({ user }: { user: AuthUser }) {
-  const { profile, profileLoading } = useUser(); // users/{uid} 문서 (실시간)
-  const linksLoading = useMyLinks(user.uid); // Firestore 에서 내 링크를 최신순으로 불러오기
-  const links = useProfileStore((s) => s.myLinks); // 내 링크
+  const { profile, profileLoading } = useUser(); // users/{uid} 문서
+  const linksQuery = useLinksQuery(user.uid); // Firestore 에서 내 링크를 최신순으로 가져오기
+  const links = linksQuery.data ?? []; // 아직 못 가져왔으면 빈 목록
 
   return (
     <>
@@ -92,7 +93,7 @@ export function MyPageContent({ user }: { user: AuthUser }) {
         </h2>
         <LinkList
           links={links}
-          loading={linksLoading} // Firestore 에서 불러오는 중이면 로딩 표시
+          loading={linksQuery.isFetching} // 처음 가져오거나, 추가·수정·삭제 뒤 다시 가져오는 중이면 로딩 표시
           emptyMessage="아직 링크가 없어요. 위에서 추가해 보세요"
           ownerUid={user.uid} // 수정·삭제 버튼
         />

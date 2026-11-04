@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import Header from "@/components/layout/Header";
+import QueryProvider from "@/components/providers/QueryProvider"; // TanStack Query 캐시를 앱 전체에 연결
 import { Toaster } from "@/components/ui/sonner"; // 토스트 알림이 뜨는 자리 // 모든 페이지 위에 붙는 헤더 (로그인/로그아웃)
 
 // 이 사이트는 2001년 웹 느낌을 위해 Arial/Courier만 씁니다(globals.css).
@@ -31,9 +32,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={cn("h-full antialiased", "font-sans")}
     >
       <body className="min-h-full flex flex-col">
-        <Header />
-        {children}
-        <Toaster />
+        {/* 헤더·각 페이지가 모두 같은 데이터 캐시를 쓰도록 감싼다 */}
+        <QueryProvider>
+          <Header />
+          {children}
+          <Toaster />
+        </QueryProvider>
       </body>
     </html>
   );

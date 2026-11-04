@@ -8,46 +8,26 @@
 //   3) 둘 다 없으면 "페이지를 찾을 수 없어요"
 // 공개 페이지는 누구나 볼 수 있는 보기 전용입니다. 링크 추가·수정·삭제는 로그인한 뒤 마이페이지에서 합니다.
 
-import { useEffect, useState } from "react";
 import LinkList from "@/components/link/LinkList"; // 링크 버튼 목록
 import ProfileHeader from "@/components/profile/ProfileHeader"; // 아바타·이름·소개
 import ProfileNotFound from "@/components/profile/ProfileNotFound"; // 없는 핸들 안내
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton"; // 로딩 자리표시
-import { fetchLinks } from "@/lib/linksFirestore";
-import type { Link } from "@/lib/types";
-import { findUserByDisplayName, isBioEmpty, type UserProfile } from "@/lib/usersFirestore";
+import { usePublicPageQuery } from "@/lib/queries"; // 공개 페이지 데이터 가져오기 (TanStack Query)
+import { isBioEmpty } from "@/lib/usersFirestore";
 import { useProfileStore, useStoreHydration } from "@/store/useProfileStore";
-
-// Firestore 에서 찾은 결과: 아직 찾는 중(undefined) / 없음(null) / 찾음
-type FirestorePage = { handle: string; found: { profile: UserProfile; links: Link[] } | null };
 
 export default function ProfileView({ handle }: { handle: string }) {
   // LocalStorage 복원을 시작하고 끝났는지 받기 (하이드레이션 오류 방지 · PRD 5.1)
   const hasHydrated = useStoreHydration();
   // 주소의 핸들과 같은 샘플 프로필 찾기 (없으면 undefined)
   const sample = useProfileStore((s) => s.profiles.find((p) => p.handle === handle));
-  const [page, setPage] = useState<FirestorePage | null>(null);
+  // Firestore 에서 displayName 이 handle 인 사용자와 그 링크를 가져온다 (주소가 바뀌면 키가 바뀌어 새로 가져옴)
+  const pageQuery = usePublicPageQuery(handle);
+  // 못 읽으면(권한 규칙·네트워크) 샘플 프로필로 넘어간다. 원인은 콘솔에서 확인
+  if (pageQuery.isError) console.error("공개 페이지 불러오기 실패:", pageQuery.error);
 
-  // Firestore 에서 displayName 이 handle 인 사용자와 그 링크를 불러온다
-  useEffect(() => {
-    let cancelled = false; // 불러오는 사이에 주소가 바뀌면 결과를 버리기 위한 표시
-    findUserByDisplayName(handle)
-      .then(async (user) => {
-        const found = user ? { profile: user.profile, links: await fetchLinks(user.uid) } : null;
-        if (!cancelled) setPage({ handle, found });
-      })
-      .catch((err) => {
-        // 못 읽으면(권한 규칙·네트워크) 샘플 프로필로 넘어간다. 원인은 콘솔에서 확인
-        console.error("공개 페이지 불러오기 실패:", err);
-        if (!cancelled) setPage({ handle, found: null });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [handle]);
-
-  const firestoreReady = page !== null && page.handle === handle; // 이 주소에 대한 결과가 왔는지
-  const found = firestoreReady ? page.found : null;
+  const firestoreReady = !pageQuery.isPending; // 이 주소에 대한 결과(성공이든 실패든)가 왔는지
+  const found = pageQuery.data ?? null;
 
   return (
     // 전체 배경. body에 남아 있는 옛 스타일 대신 shadcn 토큰 색을 쓴다

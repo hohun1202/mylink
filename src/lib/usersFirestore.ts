@@ -20,13 +20,11 @@ import {
   getDoc,
   getDocs,
   limit,
-  onSnapshot,
   query,
   serverTimestamp,
   setDoc,
   where,
   writeBatch,
-  type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { AuthUser } from "@/store/useAuthStore";
@@ -120,22 +118,12 @@ export async function ensureUserProfile(user: AuthUser): Promise<void> {
   );
 }
 
-// users/{uid} 문서를 실시간으로 지켜본다 (onSnapshot)
-// 문서가 바뀔 때마다(처음 만들어질 때 포함) onChange 가 새 값으로 불린다. 문서가 아직 없으면 null
-// 돌려주는 함수(Unsubscribe)를 부르면 지켜보기를 멈춘다 — 화면을 떠날 때 꼭 불러야 한다
-export function subscribeUserProfile(
-  uid: string,
-  onChange: (profile: UserProfile | null) => void,
-  onError: (err: Error) => void,
-): Unsubscribe {
-  return onSnapshot(
-    userDoc(uid),
-    (snapshot) => {
-      const data = snapshot.data();
-      onChange(data ? toProfile(data) : null);
-    },
-    onError,
-  );
+// users/{uid} 문서를 한 번 읽어 온다 (실시간 구독 아님). 문서가 아직 없으면 null
+// 화면에서는 TanStack Query(useProfileQuery)가 이 함수를 불러 결과를 캐시에 보관한다
+export async function fetchUserProfile(uid: string): Promise<UserProfile | null> {
+  const snapshot = await getDoc(userDoc(uid));
+  const data = snapshot.data();
+  return data ? toProfile(data) : null;
 }
 
 // ───────── 표시 이름(displayName) 규칙 ─────────
@@ -198,7 +186,6 @@ export type ProfileUpdate = {
 // 2) writeBatch 로 두 문서를 "한 번에" 쓴다 — 둘 다 성공하거나 둘 다 실패한다 (한쪽만 바뀌는 일이 없음)
 //    - users/{uid}/profile/main : 프로필 수정 내용 저장 (요구사항의 저장 위치)
 //    - users/{uid}              : 공개 페이지 찾기·중복 확인·헤더 메뉴가 읽는 문서도 같은 값으로 맞춘다
-// 바꾸면 onSnapshot 으로 users/{uid} 를 지켜보는 화면(마이페이지·헤더 프로필 메뉴)이 저절로 새 값으로 다시 그려진다
 export async function updateProfile(uid: string, currentUsername: string, next: ProfileUpdate): Promise<void> {
   if (next.username !== currentUsername) {
     const formatError = validateDisplayName(next.username);

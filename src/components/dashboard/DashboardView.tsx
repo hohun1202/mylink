@@ -12,7 +12,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import AddLinkDialog from "@/components/link/AddLinkDialog";
 import LinkList from "@/components/link/LinkList";
 import RequireLogin from "@/components/auth/RequireLogin"; // 로그아웃 상태면 로그인 안내를 대신 보여줌
-import { useMyLinks, useProfileStore } from "@/store/useProfileStore";
+import { useLinksQuery } from "@/lib/queries"; // 내 링크 가져오기 (TanStack Query)
 
 export default function DashboardView() {
   return (
@@ -36,8 +36,8 @@ export default function DashboardView() {
 
 // 로그인한 뒤의 화면
 function DashboardBody({ uid }: { uid: string }) {
-  const linksLoading = useMyLinks(uid); // Firestore 에서 내 링크를 최신순으로 불러오기
-  const links = useProfileStore((s) => s.myLinks); // 내 링크
+  const linksQuery = useLinksQuery(uid); // Firestore 에서 내 링크를 최신순으로 가져오기
+  const links = linksQuery.data ?? []; // 아직 못 가져왔으면 빈 목록
 
   return (
     <Card>
@@ -51,7 +51,7 @@ function DashboardBody({ uid }: { uid: string }) {
       <CardContent>
         <LinkList
           links={links}
-          loading={linksLoading} // Firestore 에서 불러오는 중이면 로딩 표시
+          loading={linksQuery.isFetching} // 처음 가져오거나, 추가·수정·삭제 뒤 다시 가져오는 중이면 로딩 표시
           emptyMessage="아직 링크가 없어요. '링크 추가'를 눌러 보세요"
           ownerUid={uid} // 수정·삭제 버튼
         />
