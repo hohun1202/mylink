@@ -21,7 +21,7 @@ export default function Header() {
   useAuthListener(); // 로그인 상태 감지 시작
   const { user, authReady, profileLoading, pagePath } = useUser();
   const pathname = usePathname();
-  const onMyPage = pagePath !== null && pathname === pagePath; // 지금 내 공개 페이지를 보고 있는지 (버튼 강조용)
+  const onMyPage = pagePath !== null && pathname === pagePath; // 지금 내 공개 페이지를 보고 있는지 (aria-current 표시용)
 
   return (
     // 밝은 금속판(card) 띠 + 아래쪽 인디고 굵은 테두리 (design.md 의 bevel 느낌)
