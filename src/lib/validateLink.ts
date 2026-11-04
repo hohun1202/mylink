@@ -53,10 +53,14 @@ function checkUrl(raw: string): string | null {
   return null; // 통과
 }
 
+// 제목 최대 글자 수 — Firestore 보안 규칙(firestore.rules 의 isValidLink)과 같은 값이어야 한다
+export const LINK_TITLE_MAX_LENGTH = 100;
+
 export function validateLink(input: LinkInput): LinkValidation {
   const errors: LinkErrors = {};
   const title = input.title.trim();
   if (!title) errors.title = "제목을 입력해 주세요";
+  else if (title.length > LINK_TITLE_MAX_LENGTH) errors.title = `제목은 ${LINK_TITLE_MAX_LENGTH}자까지 쓸 수 있어요`;
 
   const urlError = checkUrl(input.url);
   if (urlError) errors.url = urlError;

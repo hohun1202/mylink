@@ -1,0 +1,133 @@
+rules_version = '2';
+
+// mylink Firestore 보안 규칙
+//
+// 기본 방침
+//   - 읽기: 누구나 (공개 페이지 /{displayName} 은 로그인하지 않은 방문자도 본다)
+//   - 쓰기: 로그인했고, 경로의 {userId} 가 내 uid 와 같을 때만 (= 내 칸에만 쓴다)
+//   - 쓰기 내용도 검사: 앱이 쓰는 필드만, 앱과 같은 글자 수·형식으로만 (개발자 도구로 이상한 값을 넣는 것 차단)
+//   - 여기 적히지 않은 경로는 전부 거절 (Firestore 기본값)
+//
+// 데이터 구조 (src/lib/usersFirestore.ts · linksFirestore.ts 와 같음)
+//   users/{userId}                 uid · displayName · username · email · photoURL · bio
+//   users/{userId}/profile/main    username · name · bio · updatedAt   (마이페이지 [프로필 수정])
+//   users/{userId}/links/{linkId}  title · url · createdAt · updatedAt
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ───────── 공통 함수 ─────────
+
+    // 로그인했고, 경로의 userId 가 내 uid 인가
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // 문자열이고 글자 수가 min ~ max 인가
+    function isStr(v, min, max) {
+      return v is string && v.size() >= min && v.size() <= max;
+    }
+
+    // 로그인한 구글 계정 이메일의 @ 앞부분 (처음 로그인할 때 displayName 기본값)
+    function emailPrefix() {
+      return request.auth.token.get('email', '').split('@')[0];
+    }
+
+    // Username(= displayName = 공개 페이지 주소) 형식 — validateDisplayName() 과 같은 규칙
+    //   영문 소문자·숫자·밑줄, 첫 글자는 소문자나 숫자, 3~20자, 앱 주소(예약어) 금지
+    function isValidHandle(n) {
+      return n is string
+        && n.matches('^[a-z0-9][a-z0-9_]{2,19}$')
+        && !(n in ['mypage', 'dashboard', 'login', 'logout', 'onboarding', 'settings', 'api', 'admin']);
+    }
+
+    // ───────── users/{userId} — 공개 프로필 문서 ─────────
+    // 쓰는 곳: 로그인 직후 ensureUserProfile(만들기·옛 필드 정리), [프로필 수정] updateProfile(displayName·username·bio)
+    match /users/{userId} {
+      allow read: if true;
+
+      allow create: if isOwner(userId)
+        && request.resource.data.keys().hasOnly(['uid', 'displayName', 'username', 'email', 'photoURL', 'bio'])
+        && isValidUserDoc(userId, null);
+
+      allow update: if isOwner(userId)
+        && isValidUserDoc(userId, resource.data)
+        && legacyKeysOnlyRemoved();
+
+      allow delete: if false; // 앱에 계정 삭제 기능이 없음
+
+      // 저장될 문서 전체 검사. before = 바꾸기 전 문서 (새로 만들 때는 null)
+      function isValidUserDoc(uid, before) {
+        let d = request.resource.data;
+        return d.uid == uid                                            // 남의 uid 를 적을 수 없음
+          && d.email == request.auth.token.get('email', null)         // 내 구글 이메일만
+          // displayName: 처음 값(이메일 앞부분) / 바꾸지 않은 기존 값 / Username 형식에 맞는 새 값
+          && (d.displayName == emailPrefix()
+              || (before != null && d.displayName == before.get('displayName', null))
+              || isValidHandle(d.displayName))
+          // username(이름·실명): 없음 / 구글 계정 이름 그대로 / 1~30자 (NAME_MAX_LENGTH)
+          && (d.get('username', null) == null
+              || d.username == request.auth.token.get('name', null)
+              || isStr(d.username, 1, 30))
+          && (d.get('photoURL', null) == null || isStr(d.photoURL, 1, 2048))
+          && isStr(d.bio, 0, 60);                                     // BIO_MAX_LENGTH
+      }
+
+      // 옛 코드가 만든 name·createdAt 필드는 "지우는 것"만 허용 (새로 넣거나 바꾸기 금지)
+      function legacyKeysOnlyRemoved() {
+        let changed = request.resource.data.diff(resource.data).affectedKeys();
+        return changed.hasOnly(['uid', 'displayName', 'username', 'email', 'photoURL', 'bio', 'name', 'createdAt'])
+          && (!changed.hasAny(['name', 'createdAt'])                      // 옛 필드를 안 건드렸거나
+              || !request.resource.data.keys().hasAny(['name', 'createdAt'])); // 건드렸다면 지운 것이어야 함
+      }
+
+      // ───────── users/{userId}/profile/main — [프로필 수정] 저장본 ─────────
+      match /profile/{docId} {
+        allow read: if true;
+
+        // set(..., { merge: true }) 라서 처음엔 create, 그다음부터 update 로 들어온다 → 같은 검사
+        allow create, update: if isOwner(userId)
+          && docId == 'main'                                          // main 문서 하나만
+          && request.resource.data.keys().hasOnly(['username', 'name', 'bio', 'updatedAt'])
+          // Username: 형식에 맞는 값, 또는 처음 받은 이메일 앞부분 그대로 (예: 점이 들어간 john.doe 도 소개만 고칠 수 있게)
+          && (isValidHandle(request.resource.data.username) || request.resource.data.username == emailPrefix())
+          && isStr(request.resource.data.name, 1, 30)
+          && isStr(request.resource.data.bio, 0, 60)
+          && request.resource.data.updatedAt == request.time         // serverTimestamp() 만
+          // 같은 배치에서 users/{userId}.displayName 도 같은 값으로 바뀌어야 함 (두 문서가 어긋나지 않게)
+          && getAfter(/databases/$(database)/documents/users/$(userId)).data.displayName
+               == request.resource.data.username;
+
+        allow delete: if false;
+      }
+
+      // ───────── users/{userId}/links/{linkId} — 링크 ─────────
+      match /links/{linkId} {
+        allow read: if true;
+
+        // 추가 (saveLink): title · url · createdAt · updatedAt, 시각은 serverTimestamp() 만
+        allow create: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(['title', 'url', 'createdAt', 'updatedAt'])
+          && isValidLink(request.resource.data)
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+
+        // 수정 (updateLink): title · url · updatedAt 만 바뀔 수 있음 (createdAt 은 그대로 → 목록 순서 유지)
+        allow update: if isOwner(userId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'url', 'updatedAt'])
+          && isValidLink(request.resource.data)
+          && request.resource.data.updatedAt == request.time;
+
+        // 삭제 (deleteLink)
+        allow delete: if isOwner(userId);
+
+        // validateLink() 와 같은 큰 틀: 제목은 비어 있지 않게, 주소는 http(s):// 또는 mailto:
+        function isValidLink(d) {
+          return isStr(d.title, 1, 100)
+            && isStr(d.url, 1, 2048)
+            && d.url.matches('^(https?://|mailto:)[^\\s]+$');
+        }
+      }
+    }
+  }
+}
