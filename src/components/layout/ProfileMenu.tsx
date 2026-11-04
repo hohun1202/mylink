@@ -4,13 +4,13 @@
 // 사진 + 이름을 누르면 아래 내용이 펼쳐집니다.
 //   ┌ [사진] displayName / username / email
 //   ├ 한 줄 소개 · 내 링크 N개
-//   ├ 마이페이지 · 링크 추가
+//   ├ 마이페이지 · 내 페이지로 이동 · 링크 추가
 //   ├ 내 페이지 미리보기 · 내 페이지 링크 복사
 //   └ Google 계정으로 로그인됨 · 로그아웃
 
 import { useState } from "react";
 import { useRouter } from "next/navigation"; // 코드로 페이지 이동
-import { ChevronDown, Copy, ExternalLink, LogOut, Plus, User } from "lucide-react";
+import { ChevronDown, Copy, ExternalLink, House, LogOut, Plus, User } from "lucide-react";
 import { toast } from "sonner"; // 잠깐 떴다 사라지는 알림
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -29,11 +29,11 @@ import { useLinksQuery } from "@/lib/queries"; // 내 링크 가져오기 (TanSt
 
 export default function ProfileMenu({ user }: { user: AuthUser }) {
   const router = useRouter();
-  const { profile } = useUser(); // Firestore users/{uid} 문서 (프로필 수정 시 낙관적 업데이트로 바로 바뀜)
+  const { profile, displayName: myDisplayName } = useUser(); // Firestore users/{uid} 문서 (프로필 수정 시 낙관적 업데이트로 바로 바뀜)
   const [addOpen, setAddOpen] = useState(false); // "링크 추가" 창이 열려 있는지
 
   // 화면에 쓸 값: Firestore 문서가 있으면 그 값, 아직 없으면 로그인 정보로 대신한다
-  const displayName = profile?.displayName || user.name; // 이메일 앞부분
+  const displayName = myDisplayName ?? user.name; // 공개 페이지 주소의 이름 (Firestore 값, 없으면 이메일 앞부분)
   const username = profile?.username ?? user.username; // 구글 실명
   const photoURL = profile?.photoURL ?? user.photoURL;
   const pagePath = publicPagePath(displayName); // 내 공개 페이지 주소 (/hohun1202)
@@ -97,6 +97,11 @@ export default function ProfileMenu({ user }: { user: AuthUser }) {
             <DropdownMenuItem onClick={() => router.push("/")}>
               <User aria-hidden />
               마이페이지
+            </DropdownMenuItem>
+            {/* 방문자가 보는 내 공개 페이지(/{displayName})로 지금 탭에서 이동 */}
+            <DropdownMenuItem onClick={() => router.push(pagePath)}>
+              <House aria-hidden />
+              내 페이지로 이동
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setAddOpen(true)}>
               <Plus aria-hidden />

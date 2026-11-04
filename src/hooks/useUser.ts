@@ -1,13 +1,13 @@
 "use client";
 
 // 로그인한 사용자 정보 + Firestore 프로필(users/{uid})을 한 번에 꺼내 쓰는 커스텀 훅입니다.
-// 쓰는 법: const { user, profile, authReady, profileLoading } = useUser();
+// 쓰는 법: const { user, profile, authReady, profileLoading, pagePath } = useUser();
 // - user: Firebase Auth 의 로그인 정보 (uid·이름·이메일·사진). 로그아웃 상태면 null
 // - profile: Firestore users/{uid} 문서 내용. TanStack Query 로 한 번 읽어 캐시에 둔다 (실시간 아님)
 //   프로필을 고치면 낙관적 업데이트로 캐시가 먼저 바뀌므로, 이 값을 쓰는 화면(마이페이지·헤더 메뉴)이 바로 새 값으로 그려진다
 
 import { useProfileQuery } from "@/lib/queries";
-import type { UserProfile } from "@/lib/usersFirestore";
+import { publicPagePath, type UserProfile } from "@/lib/usersFirestore";
 import { useAuthStore, type AuthUser } from "@/store/useAuthStore";
 
 type UseUserResult = {
@@ -15,6 +15,8 @@ type UseUserResult = {
   authReady: boolean; // 로그인 여부를 Firebase 가 알려 줬는지
   profile: UserProfile | null; // users/{uid} 문서 (아직 없거나 로그아웃이면 null)
   profileLoading: boolean; // 프로필 문서를 처음 받아 오는 중인지
+  displayName: string | null; // 지금 내 displayName (= 공개 페이지 주소의 이름). Firestore 값 우선, 없으면 로그인 정보. 로그아웃이면 null
+  pagePath: string | null; // 내 공개 페이지 주소 (예: /hohun1202). 로그아웃이면 null
 };
 
 export function useUser(): UseUserResult {
@@ -24,10 +26,15 @@ export function useUser(): UseUserResult {
 
   if (profileQuery.isError) console.error("유저 프로필 불러오기 실패:", profileQuery.error); // 권한 규칙 등. 화면은 구글 계정 정보로 대신 그림
 
+  // Username 을 바꾸면 낙관적 업데이트로 profile 이 먼저 바뀌므로, 헤더의 "내 페이지" 주소도 바로 새 주소가 된다
+  const displayName = user ? profileQuery.data?.displayName || user.name : null;
+
   return {
     user,
     authReady,
     profile: profileQuery.data ?? null,
     profileLoading: !!user && profileQuery.isPending,
+    displayName,
+    pagePath: displayName ? publicPagePath(displayName) : null,
   };
 }

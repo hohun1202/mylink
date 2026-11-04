@@ -12,9 +12,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteLink, fetchLinks, saveLink, updateLink } from "@/lib/linksFirestore";
 import type { LinkInput } from "@/lib/validateLink";
+import { fetchPublicPage, type PublicPage } from "@/lib/publicPage"; // 공개 페이지 = 사용자 찾기 + 링크
 import {
   fetchUserProfile,
-  findUserByDisplayName,
   isDisplayNameTaken,
   updateProfile,
   type ProfileUpdate,
@@ -26,7 +26,7 @@ export const queryKeys = {
   links: (uid: string) => ["links", uid] as const, // 내 링크 목록 (users/{uid}/links)
   profile: (uid: string) => ["profile", uid] as const, // 내 프로필 (users/{uid})
   publicPageAll: ["publicPage"] as const, // 공개 페이지 전체 (한꺼번에 오래됨 표시할 때)
-  publicPage: (handle: string) => ["publicPage", handle] as const, // /{handle} 공개 페이지 (프로필 + 링크)
+  publicPage: (displayName: string) => ["publicPage", displayName] as const, // /{displayName} 공개 페이지 (프로필 + 링크)
   displayNameTaken: (name: string, uid: string) => ["displayNameTaken", name, uid] as const, // Username 중복 확인
 };
 
@@ -50,14 +50,14 @@ export function useProfileQuery(uid: string | undefined) {
   });
 }
 
-// 공개 페이지 /{handle}: displayName 이 handle 인 사용자와 그 사람의 링크. 없으면 null
-export function usePublicPageQuery(handle: string) {
+// 공개 페이지 /{displayName}: displayName 이 같은 사용자와 그 사람의 링크(users/{uid}/links). 없으면 null
+// initialData: 서버(page.tsx)가 404 판단하면서 이미 가져온 값. 있으면 브라우저는 처음에 다시 묻지 않고 그걸로 바로 그린다
+// (undefined 면 평소처럼 브라우저에서 가져온다 — 서버에서 읽기에 실패한 경우 등)
+export function usePublicPageQuery(displayName: string, initialData?: PublicPage | null) {
   return useQuery({
-    queryKey: queryKeys.publicPage(handle),
-    queryFn: async () => {
-      const user = await findUserByDisplayName(handle);
-      return user ? { profile: user.profile, links: await fetchLinks(user.uid) } : null;
-    },
+    queryKey: queryKeys.publicPage(displayName),
+    queryFn: () => fetchPublicPage(displayName),
+    initialData,
   });
 }
 
