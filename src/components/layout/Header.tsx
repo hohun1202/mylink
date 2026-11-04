@@ -3,7 +3,7 @@
 // 모든 페이지 맨 위에 붙는 헤더입니다. (layout.tsx 에서 한 번만 넣음)
 // - 왼쪽: mylink 로고 (누르면 첫 화면으로)
 // - 오른쪽: 로그아웃 상태면 [Google로 로그인],
-//           로그인 상태면 [내 페이지] 버튼(내 공개 페이지 /{displayName} 로 이동) + 프로필 드롭다운 메뉴 [사진 + "○○님" ▼] (ProfileMenu)
+//           로그인 상태면 [내 페이지] 버튼(내 공개 페이지 /{displayName} 를 새 탭으로 열기) + 프로필 드롭다운 메뉴 [사진 + "○○님" ▼] (ProfileMenu)
 // 로그인 상태 감지(onAuthStateChanged)도 여기서 시작합니다. 헤더는 어느 페이지에나 있으므로 한 번만 켜면 됩니다.
 
 import NextLink from "next/link"; // 앱 안에서 페이지 이동
@@ -46,6 +46,9 @@ export default function Header() {
               <NextLink
                 href={pagePath}
                 aria-current={onMyPage ? "page" : undefined} // 화면 읽기 프로그램에 "지금 이 페이지"라고 알림
+                // 새 탭에서 열기: 지금 보던 화면(예: 마이페이지)은 그대로 두고, 공개 페이지를 새 탭으로 띄운다
+                target="_blank"
+                rel="noopener noreferrer" // 새 탭이 원래 페이지를 조작하지 못하게 막는 보안 설정
                 // 항상 primary(인디고 채움) 버튼 모양 — 헤더에서 가장 눈에 띄는 바로가기
                 className={cn(buttonVariants({ variant: "default", size: "sm" }), "shrink-0")}
               >
