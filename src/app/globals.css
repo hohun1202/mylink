@@ -228,6 +228,43 @@ body {
   border-bottom: 1px solid #3d4f97;
 }
 
+/* ─── 랜딩 페이지 움직임 (LandingPreview) ─────────────────────────────────
+   @utility 로 만들어 group-hover: 같은 앞붙임(variant)도 쓸 수 있게 한다.
+   "움직임 줄이기"를 켠 사용자에게는 움직이지 않는다.
+────────────────────────────────────────────────────────────────────────────── */
+@keyframes landing-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes landing-caret {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@keyframes landing-pop {
+  0% { opacity: 0; transform: translateY(6px) scale(0.8); }
+  60% { opacity: 1; transform: translateY(-4px) scale(1.1); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* 휴대폰 모형이 둥둥 떠 있는 움직임 */
+@utility landing-float {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: landing-float 4s ease-in-out infinite;
+  }
+}
+/* 주소창 커서 깜빡임 */
+@utility landing-caret {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: landing-caret 1s step-end infinite;
+  }
+}
+/* "+1 클릭" 배지가 튀어 오르기 (움직임 줄이기면 그냥 나타나기만) */
+@utility landing-pop {
+  opacity: 1;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: landing-pop 0.35s ease-out both;
+  }
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

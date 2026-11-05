@@ -9,14 +9,17 @@ import LandingPage from "@/components/landing/LandingPage";
 import { MyPageContent } from "@/components/mypage/MyPageView";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import { useUser } from "@/hooks/useUser";
+import { cn } from "@/lib/utils";
 
 export default function HomeView() {
   const { user, authReady } = useUser();
+  const showLanding = authReady && !user; // 로그아웃 상태 → 소개 페이지
 
   return (
     <main className="flex flex-1 justify-center bg-background px-4 py-12 text-base text-foreground">
-      {/* 모바일 우선: 좁은 화면은 꽉 채우고, 넓은 화면에서는 가운데 최대 448px */}
-      <div className="flex w-full max-w-md flex-col gap-6">
+      {/* 모바일 우선: 좁은 화면은 꽉 채우고, 넓은 화면에서는 가운데 최대 448px
+          소개 페이지만 md(768px) 이상에서 최대 896px 로 넓혀 2단·여러 칸 배치를 쓴다 */}
+      <div className={cn("flex w-full max-w-md flex-col gap-6", showLanding && "md:max-w-4xl")}>
         {!authReady ? <ProfileSkeleton /> : user ? <MyPageContent user={user} /> : <LandingPage />}
       </div>
     </main>
