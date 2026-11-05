@@ -155,3 +155,12 @@ export async function updateProfile(uid: string, next: ProfileUpdate): Promise<v
   batch.update(userDoc(uid), { username: next.name, bio: next.bio });
   await batch.commit(); // 바구니에 담은 쓰기를 한꺼번에 실행
 }
+
+// 사이트맵(sitemap.xml)용: 공개 페이지가 있는 모든 사용자의 displayName(= 공개 주소)
+// users 문서는 누구나 읽을 수 있으므로(firestore.rules) 로그인 없이 서버에서 조회할 수 있다
+export async function listDisplayNames(): Promise<string[]> {
+  const snapshot = await getDocs(collection(db, "users"));
+  return snapshot.docs
+    .map((d) => d.data().displayName)
+    .filter((name): name is string => typeof name === "string" && name.length > 0);
+}
