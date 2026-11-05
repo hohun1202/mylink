@@ -25,7 +25,8 @@ import { useLinkForm } from "@/components/link/useLinkForm"; // 입력값·검�
 type AddLinkDialogProps = {
   uid: string; // 링크를 추가할 계정 (로그인한 사용자의 uid)
   label?: string; // 여는 버튼의 글자
-  fullWidth?: boolean; // true면 여는 버튼을 가로로 꽉 채운 큰 버튼으로 (공개 페이지용)
+  fullWidth?: boolean; // true면 여는 버튼을 가로로 꽉 채운 큰 버튼으로 (마이페이지용)
+  variant?: "default" | "brand"; // 여는 버튼 색 (brand = 마이페이지의 보라색 추가 버튼)
   // 바깥에서 열고 닫을 때 (예: 헤더 프로필 메뉴의 "링크 추가"). 이 값을 주면 여는 버튼은 그리지 않는다
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -35,6 +36,7 @@ export default function AddLinkDialog({
   uid,
   label = "링크 추가",
   fullWidth = false,
+  variant = "default",
   open: controlledOpen,
   onOpenChange,
 }: AddLinkDialogProps) {
@@ -57,7 +59,7 @@ export default function AddLinkDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {/* 다이얼로그를 여는 버튼 (바깥에서 열 때는 그리지 않음) */}
       {!controlled && (
-        <DialogTrigger render={<Button size={fullWidth ? "lg" : "default"} className={fullWidth ? "h-12 w-full text-base font-bold" : undefined} />}>
+        <DialogTrigger render={<Button variant={variant} size={fullWidth ? "lg" : "default"} className={fullWidth ? "h-14 w-full text-lg font-bold shadow-md" : undefined} />}>
           <Plus aria-hidden />
           {label}
         </DialogTrigger>
