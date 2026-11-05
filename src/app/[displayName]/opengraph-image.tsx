@@ -152,8 +152,10 @@ async function render(p: OgProfile) {
 // (ImageResponse 는 응답을 보내는 도중에 그리기 때문에, 미리 다 그려 보지 않으면 오류가 빈 응답으로 끊긴다)
 async function tryRender(p: OgProfile): Promise<Response | null> {
   try {
-    const png = await (await render(p)).arrayBuffer();
-    return new Response(png, { headers: { "Content-Type": contentType } });
+    const res = await render(p); // ImageResponse (아직 그리기 전 — 읽기 시작하면 그린다)
+    const png = await res.arrayBuffer(); // 여기서 끝까지 그려 보고, 오류가 나면 catch 로
+    // ImageResponse 가 정해 둔 헤더(content-type · cache-control)를 그대로 옮겨 붙인다
+    return new Response(png, { headers: res.headers });
   } catch (err) {
     console.error("OG 이미지 그리기 실패:", err);
     return null;
