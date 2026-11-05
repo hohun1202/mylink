@@ -1,13 +1,12 @@
 "use client"; // 로그인 상태·Firestore 를 읽으므로 클라이언트 컴포넌트
 
-// 마이페이지 화면입니다: 위에서부터 제목 → 내 프로필 → 링크 추가 폼 → 링크 목록.
+// 마이페이지 화면입니다: 위에서부터 제목 → 내 프로필 → [새 링크 추가하기] 버튼 → 링크 목록.
 // - 프로필: Firestore users/{uid} 문서를 TanStack Query 로 읽어 보여준다 (useUser · 실시간 아님)
 //   [프로필 수정]으로 저장하면 낙관적 업데이트로 화면이 먼저 바뀐다 (useUpdateProfileMutation)
 // - 링크: Firestore users/{uid}/links 에서 불러오고, 추가·수정·삭제도 같은 경로에 한다
 // 첫 화면(/)은 로그인하면 이 화면(MyPageContent)을, /mypage 는 MyPageView 를 보여준다.
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import AddLinkForm from "@/components/link/AddLinkForm";
+import AddLinkDialog from "@/components/link/AddLinkDialog"; // [새 링크 추가하기] 버튼 + 입력 창
 import LinkList from "@/components/link/LinkList";
 import ProfileEditDialog from "@/components/profile/ProfileEditDialog"; // [프로필 수정] → 이름·한 줄 소개 수정 (Username 은 바꿀 수 없음)
 import ProfileHeader from "@/components/profile/ProfileHeader";
@@ -76,15 +75,8 @@ export function MyPageContent({ user }: { user: AuthUser }) {
         </div>
       )}
 
-      {/* 링크 추가 폼 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base font-bold">링크 추가</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <AddLinkForm uid={user.uid} />
-        </CardContent>
-      </Card>
+      {/* [새 링크 추가하기] 버튼 — 누르면 창이 열려 제목·주소를 입력한다 */}
+      <AddLinkDialog uid={user.uid} label="새 링크 추가하기" fullWidth />
 
       {/* 링크 목록 — 스토어가 바뀌면 여기가 바로 다시 그려짐 */}
       <section className="flex flex-col gap-3" aria-labelledby="my-links-title">
