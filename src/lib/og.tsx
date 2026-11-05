@@ -34,9 +34,10 @@ export const C = {
 
 // Google Fonts 에 "이 글자들만" 담은 글꼴 파일을 달라고 해서 받아 온다 (text= 파라미터 → 아주 작은 TTF)
 // 실패하면(오프라인 등) null — 그때는 ImageResponse 기본 글꼴로 그려지고 한글은 빈칸으로 나올 수 있다
-async function loadGoogleFont(weight: number, text: string): Promise<ArrayBuffer | null> {
+// family: Google Fonts 글꼴 이름 (기본 Noto Sans KR). 정적 OG 그림은 Arial 대신 Arimo, Courier New 대신 Cousine 을 쓴다
+export async function loadGoogleFont(weight: number, text: string, family = "Noto Sans KR"): Promise<ArrayBuffer | null> {
   try {
-    const cssUrl = `https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@${weight}&text=${encodeURIComponent(text)}`;
+    const cssUrl = `https://fonts.googleapis.com/css2?family=${family.replace(/ /g, "+")}:wght@${weight}&text=${encodeURIComponent(text)}`;
     const css = await (await fetch(cssUrl)).text(); // 글꼴 파일 주소가 적힌 CSS
     const fontUrl = css.match(/src: url\((.+?)\) format\('(?:opentype|truetype)'\)/)?.[1]; // 그 안의 TTF/OTF 주소
     if (!fontUrl) return null;
@@ -175,7 +176,7 @@ const GLYPHS = {
 };
 
 // 링크 주소에 맞는 아이콘 칸 (브랜드면 브랜드 색 + 로고, 아니면 검정 칸 + 선 아이콘)
-function OgLinkIcon({ url, size }: { url: string; size: number }) {
+export function OgLinkIcon({ url, size }: { url: string; size: number }) {
   const kind = getLinkIconKind(url);
   const brand = BRANDS[kind];
   const glyph = kind === "mail" ? GLYPHS.mail : kind === "blog" ? GLYPHS.blog : GLYPHS.default;
